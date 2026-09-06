@@ -2,7 +2,9 @@ name: Analytic input development
 
 on:
   push:
-    branches: [formalize/analytic-inputs-20260906]
+    branches:
+      - formalize/analytic-inputs-20260906
+      - formalize/mr-20260906
   pull_request:
     branches: [main]
 
@@ -24,3 +26,5 @@ jobs:
           lake build
       - name: Enforced smooth-side axiom audit
         run: lake env lean Erdos1201/Smooth/Audit.lean
+      - name: Check Montgomery–Vaughan import
+        run: lake env lean Erdos1201/MR/MVImportTest.lean
