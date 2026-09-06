@@ -26,11 +26,55 @@ jobs:
         if: always()
         run: |
           prefix="$(lean --print-prefix)"
-          tar --exclude-vcs --exclude='*.ilean' --exclude='*.c' --exclude='*.o' --exclude='*/ir/*' --exclude='*/bin/cache*' -I 'zstd -T0 -3' -cf lean-environment.tar.zst -C "$(dirname "$prefix")" "$(basename "$prefix")" -C "$GITHUB_WORKSPACE" .lake/packages .lake/build
+          tar --exclude-vcs --exclude='*.ilean' --exclude='*.c' --exclude='*.o' --exclude='*.a' --exclude='*/ir/*' --exclude='*/bin/cache*' -I 'zstd -T0 -3' -cf lean-environment.tar.zst -C "$(dirname "$prefix")" "$(basename "$prefix")" -C "$GITHUB_WORKSPACE" .lake/packages .lake/build
+          split -b 440M lean-environment.tar.zst lean-part-
+          sha256sum lean-environment.tar.zst lean-part-*
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: lean-offline-environment
-          path: lean-environment.tar.zst
+          name: lean-part-aa
+          path: lean-part-aa
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-part-ab
+          path: lean-part-ab
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-part-ac
+          path: lean-part-ac
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-part-ad
+          path: lean-part-ad
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-part-ae
+          path: lean-part-ae
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-part-af
+          path: lean-part-af
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-part-ag
+          path: lean-part-ag
           retention-days: 1
           compression-level: 0
