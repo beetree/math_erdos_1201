@@ -1,8 +1,8 @@
-name: Analytic input development
+name: MR completion development
 
 on:
   push:
-    branches: [formalize/analytic-inputs-20260906]
+    branches: [formalize/mr-complete-20260906]
   pull_request:
     branches: [main]
 
@@ -18,7 +18,9 @@ jobs:
         run: |
           curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Obtain dependencies and build the full project
+      - name: Refresh pinned dependency manifest
+        run: lake update
+      - name: Obtain caches and build
         run: |
           lake exe cache get
           lake build
