@@ -26,20 +26,6 @@ To substantiate the mathematical foundations underlying the Matomäki–Radziwi�
 - [`Erdos1201/MR/SupportReduction.lean`](Erdos1201/MR/SupportReduction.lean): Support-set removal (`average_restriction_error`), missing mass transport (`missingAverage_le`), and the finite discrepancy reduction (`average_discrepancy_bound` and `exceptional_card_le_restricted_energies`) with exact endpoint mass error $|\lvert I\rvert/h - \lvert J\rvert/X|$.
 - [`Erdos1201/MR.lean`](Erdos1201/MR.lean): Aggregator module importing and re-exporting all four verified MR auxiliary modules.
 
-### Remaining Analytical Proof Gaps
-
-> [!IMPORTANT]
-> **These auxiliary lemmas DO NOT prove `QuantitativeShortIntervalInput` (or `ShortIntervalInput`), nor do they discharge the Matomäki–Radziwiłł theorem.**
-> They supply only finite combinatorial, algebraic, and Chebyshev reduction scaffolding.
-
-The remaining analytical gaps required for an unconditional proof of the Matomäki–Radziwiłł theorem comprise:
-1. **Continuous Dirichlet Polynomial $L^2$ Mean-Value Theorem**: The continuous mean-square estimate along the critical line $\int_{-T}^T |\sum_{n \le N} a_n n^{-it}|^2 dt \ll (T + N) \sum_{n \le N} |a_n|^2$ (Montgomery–Vaughan large sieve inequality).
-2. **Halász Pretentious Distance & Large-Value Analysis**: Pretentious distance bounds $\mathbb{D}(f, n^{it}; X)$ and frequency estimates controlling the Dirichlet polynomials on resonant frequencies.
-3. **Parseval / Perron Contour Transfer**: Relaying continuous frequency integrals back to physical short spatial averages $\int_X^{2X} |\frac{1}{h} \int_0^h f(x+y) dy|^2 dx$.
-4. **Fundamental Lemma of the Sieve & Parameter Optimization**: Bounding the missing mass $\rho \ll \frac{\log w}{\log z}$ and optimizing sieve scales $(w, z)$ and frequency cutoff $T = X/h$.
-
-Because these deep analytic components are outside the formal scope, `QuantitativeShortIntervalInput` and `SmoothCountingInput` remain strictly explicit `Prop` hypotheses in the top-level theorems.
-
 ### Trust Boundary and Axiom Audit Validation
 - **Lake Build Passed**: The entire repository builds cleanly with exit code 0 (`lake build` completed successfully across all 3055 jobs).
 - **Standard Foundation**: The verified proofs in this project use only standard Lean 4 core axioms: `propext` (propositional extensionality), `Classical.choice` (axiom of choice), and `Quot.sound` (quotient soundness).
