@@ -18,8 +18,21 @@ jobs:
         run: |
           curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Refresh pinned dependency manifest
-        run: lake update
+      - name: Materialize MR dependency and satisfy its standalone patch layout
+        run: |
+          set +e
+          lake update
+          first=$?
+          set -e
+          if [ "$first" -ne 0 ]; then
+            mr=.lake/packages/lean-proofs-latest/src/latest
+            mkdir -p "$mr/.lake/packages"
+            for p in BoundedGaps AINTLIB leancert Waring; do
+              test -d ".lake/packages/$p"
+              ln -sfn "$(realpath ".lake/packages/$p")" "$mr/.lake/packages/$p"
+            done
+            lake update
+          fi
       - name: Obtain caches and build
         run: |
           lake exe cache get
