@@ -15,6 +15,7 @@ name = "lean-proofs-latest"
 git = "https://github.com/plby/lean-proofs.git"
 rev = "f06c4076c5352252d1dbab91ae3afa28037f466c"
 subDir = "src/latest"
+options = {packagesDir = ".lake/packages"}
 
 [[lean_lib]]
 name = "Erdos1201"
