@@ -33,6 +33,13 @@ jobs:
             done
             lake update
           fi
+      - name: Enumerate high-level MR short-interval endpoints
+        run: |
+          root=.lake/packages/lean-proofs-latest/src/latest/ErdosProblems/Erdos67b
+          echo '=== theorem declarations containing shortInterval ==='
+          grep -R -n -E '^theorem [A-Za-z0-9_]*[Ss]hortInterval[A-Za-z0-9_]*|^theorem [A-Za-z0-9_]*short[A-Za-z0-9_]*MeanSquare[A-Za-z0-9_]*' "$root" --include='*.lean' | tail -n 250 || true
+          echo '=== centeredNormalized usages/declarations ==='
+          grep -R -n 'centeredNormalizedShortAverageMeanSquare' "$root" --include='*.lean' | tail -n 150 || true
       - name: Obtain caches and build
         run: |
           lake exe cache get
