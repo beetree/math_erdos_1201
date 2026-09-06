@@ -1,0 +1,36 @@
+name: Analytic input development
+
+on:
+  push:
+    branches: [formalize/analytic-inputs-20260906]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Lean
+        run: |
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Obtain dependencies and build existing project
+        run: |
+          lake exe cache get
+          lake build
+      - name: Check new smooth-number route
+        run: lake env lean Erdos1201/Smooth/MeanGap.lean
+      - name: Package public compiler dependencies for offline checking
+        if: always()
+        run: |
+          prefix="$(lean --print-prefix)"
+          tar --exclude-vcs --exclude='*.ilean' --exclude='*.c' --exclude='*.o' --exclude='*/ir/*' --exclude='*/bin/cache*' -I 'zstd -T0 -3' -cf lean-environment.tar.zst -C "$(dirname "$prefix")" "$(basename "$prefix")" -C "$GITHUB_WORKSPACE" .lake/packages .lake/build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-offline-environment
+          path: lean-environment.tar.zst
+          retention-days: 1
+          compression-level: 0
