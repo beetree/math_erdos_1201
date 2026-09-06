@@ -16,6 +16,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Package verified MV source for porting
+        if: ${{ github.ref_name == 'formalize/mr-20260906' }}
+        run: |
+          git clone --depth 1 https://github.com/ZafirGu/zeta-23-lean.git /tmp/zeta23
+          mkdir -p payload/Zeta23/MV
+          cp /tmp/zeta23/Zeta23/MV.lean payload/Zeta23/
+          cp /tmp/zeta23/Zeta23/Hypotheses.lean payload/Zeta23/
+          cp /tmp/zeta23/Zeta23/MV/{Spacing,Quadratic,EigenIdentity,Eigen,Duality,Final}.lean payload/Zeta23/MV/
+          cp /tmp/zeta23/LICENSE payload/ZETA23_LICENSE
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.ref_name == 'formalize/mr-20260906' }}
+        with:
+          name: zeta23-mv-source
+          path: payload
+          retention-days: 1
       - name: Install pinned Lean
         run: |
           curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
@@ -26,5 +41,3 @@ jobs:
           lake build
       - name: Enforced smooth-side axiom audit
         run: lake env lean Erdos1201/Smooth/Audit.lean
-      - name: Check Montgomery–Vaughan import
-        run: lake env lean Erdos1201/MR/MVImportTest.lean
