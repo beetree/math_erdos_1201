@@ -3,6 +3,8 @@ name: Analytic input development
 on:
   push:
     branches: [formalize/analytic-inputs-20260906]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -16,65 +18,9 @@ jobs:
         run: |
           curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Obtain dependencies and build existing project
+      - name: Obtain dependencies and build the full project
         run: |
           lake exe cache get
           lake build
-      - name: Check new smooth-number route
-        run: lake env lean Erdos1201/Smooth/MeanGap.lean
-      - name: Package public compiler dependencies for offline checking
-        if: always()
-        run: |
-          prefix="$(lean --print-prefix)"
-          tar --exclude-vcs --exclude='*.ilean' --exclude='*.c' --exclude='*.o' --exclude='*.a' --exclude='*/ir/*' --exclude='*/bin/cache*' -I 'zstd -T0 -3' -cf lean-environment.tar.zst -C "$(dirname "$prefix")" "$(basename "$prefix")" -C "$GITHUB_WORKSPACE" .lake/packages .lake/build
-          split -b 440M lean-environment.tar.zst lean-part-
-          sha256sum lean-environment.tar.zst lean-part-*
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lean-part-aa
-          path: lean-part-aa
-          retention-days: 1
-          compression-level: 0
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lean-part-ab
-          path: lean-part-ab
-          retention-days: 1
-          compression-level: 0
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lean-part-ac
-          path: lean-part-ac
-          retention-days: 1
-          compression-level: 0
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lean-part-ad
-          path: lean-part-ad
-          retention-days: 1
-          compression-level: 0
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lean-part-ae
-          path: lean-part-ae
-          retention-days: 1
-          compression-level: 0
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lean-part-af
-          path: lean-part-af
-          retention-days: 1
-          compression-level: 0
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lean-part-ag
-          path: lean-part-ag
-          retention-days: 1
-          compression-level: 0
+      - name: Enforced smooth-side axiom audit
+        run: lake env lean Erdos1201/Smooth/Audit.lean

@@ -1,6 +1,7 @@
 import Erdos1201.Audit
 import Erdos1201.PrimeFactor
 import Erdos1201.MR
+import Erdos1201.Smooth.Audit
 
 /-!
 # Erdős Problem #1201 Formalization

@@ -1,125 +1,101 @@
 # math_erdos_1201
 
-A Lean 4.34.0-rc2 formal reproduction of the proof in [A note on Erdős Problem #1201](https://www.ulam.ai/research/erdos1201.pdf), available locally as [erdos1201.pdf](erdos1201.pdf).
+A Lean 4 development of the deduction in *A note on Erdős Problem #1201*, with an additional elementary smooth-number route. The original paper is included as [erdos1201.pdf](erdos1201.pdf).
 
 ## Attribution
 
-* **Original Paper and Deduction**: **The original paper and proof are by Przemek Chojecki together with ChatGPT 5.5.** Credit for the mathematical argument and proof strategy belongs entirely to them. This repository is an independent formalization in Lean 4 verifying their deduction.
-* **Matomäki–Radziwiłł Auxiliary Lemmas**: The auxiliary modules under [`Erdos1201/MR/`](Erdos1201/MR.lean) formalize finite reductions supporting the Matomäki–Radziwiłł framework (based on Section 5, equation 16 of arXiv:1501.04585v4).
+The original Erdős #1201 paper and mathematical deduction are by **Przemek Chojecki together with ChatGPT 5.5**. This repository is an independent Lean formalization. The finite MR auxiliary modules are based on the corrected Matomäki–Radziwiłł framework, arXiv:1501.04585v4, Section 5, equation (16).
 
-Preserve this attribution prominently throughout the repository, including in all documentation, module docstrings, and derived artifacts. See [AGENTS.md](AGENTS.md) for contributor and agent workflow guidelines.
+## Current proof boundary
 
-## Formalization Status & Analytic Trust Boundary
+**The smooth-number premise has been eliminated from the new final theorem. The MR premise has not.**
 
-The formalization verifies the paper's deduction **conditional on two explicit analytic hypotheses**. It does **not** provide an unconditional proof of Erdős Problem #1201.
+```lean
+theorem erdos_problem_1201_of_MR
+    (hMR : QuantitativeShortIntervalInput)
+    {ε η : ℝ} (hε : 0 < ε) (hη : 0 < η) :
+    ∃ k : ℕ, 1 - η ≤ lowerDensity (goodSet ε k)
+```
 
-The two external inputs are deep number-theoretic results that are isolated as explicit hypothesis propositions (`Prop`), **never** introduced as Lean `axiom` declarations:
-1. **Quantitative Matomäki–Radziwiłł Short-Interval Theorem** (`QuantitativeShortIntervalInput`): An explicit quantitative short-interval variance estimate for completely multiplicative functions with values in $[-1, 1]$. In [`Erdos1201/Quantitative.lean`](Erdos1201/Quantitative.lean), we formally prove that this implies the qualitative uniform interface `ShortIntervalInput` (`QuantitativeShortIntervalInput.to_shortIntervalInput`).
-2. **Dickman–de Bruijn Smooth-Number Asymptotics** (`SmoothCountingInput`): The asymptotic density of smooth numbers $\Psi(X, X^\beta)/X \to r < 1$ and $\Psi(2X, X^\beta)/X \to 2r$ as natural $X \to \infty$ for fixed $0 < \beta < 1$. In [`Erdos1201/SmoothAsymptotics.lean`](Erdos1201/SmoothAsymptotics.lean), we formally prove that this implies the block-mean interface `SmoothMeanInput` (`SmoothCountingInput.to_smoothMeanInput`).
+This theorem is in `Erdos1201/Smooth/Unconditional.lean`. That module name refers to its **smooth-number theorem**, not to the final Erdős conclusion.
 
-### Checked Matomäki–Radziwiłł Auxiliary Lemmas (`Erdos1201.MR`)
+The extension proves
 
-To substantiate the mathematical foundations underlying the Matomäki–Radziwiłł theorem, four self-contained auxiliary modules have been formalized and fully verified under `Erdos1201.MR`:
-- [`Erdos1201/MR/Arithmetic.lean`](Erdos1201/MR/Arithmetic.lean): Finite prime-divisor counting functions (`divisorsIn`, `omegaIn`), the corrected divisor count denominator $\text{correctedCount}(S, p, m) = \omega_S(m) + \mathbf{1}_{p \nmid m}$ from arXiv:1501.04585v4, and prime-square divisor detection.
-- [`Erdos1201/MR/Ramare.lean`](Erdos1201/MR/Ramare.lean): Exact finite partition-of-unity identity over fields of characteristic zero, prime/cofactor reindexing via `cofactors`, and the three-part Ramaré decomposition separating the factorized coprime main term, the explicit prime-square correction, and the unsifted residual.
-- [`Erdos1201/MR/Exceptional.lean`](Erdos1201/MR/Exceptional.lean): Finite Chebyshev inequality (`exceptional_card_le_energy`) bounding exceptional set cardinality by explicit $L^2$ energy, and the two-energy exceptional reduction (`exceptional_card_le_two_energies`).
-- [`Erdos1201/MR/SupportReduction.lean`](Erdos1201/MR/SupportReduction.lean): Support-set removal (`average_restriction_error`), missing mass transport (`missingAverage_le`), and the finite discrepancy reduction (`average_discrepancy_bound` and `exceptional_card_le_restricted_energies`) with exact endpoint mass error $|\lvert I\rvert/h - \lvert J\rvert/X|$.
-- [`Erdos1201/MR.lean`](Erdos1201/MR.lean): Aggregator module importing and re-exporting all four verified MR auxiliary modules.
+```lean
+theorem smoothMeanGapInput : SmoothMeanGapInput
+```
 
-### Trust Boundary and Axiom Audit Validation
-- **Lake Build Passed**: The entire repository builds cleanly with exit code 0 (`lake build` completed successfully across all 3055 jobs).
-- **Standard Foundation**: The verified proofs in this project use only standard Lean 4 core axioms: `propext` (propositional extensionality), `Classical.choice` (axiom of choice), and `Quot.sound` (quotient soundness).
-- **No Unchecked Substitutes**: The final theorem audit (`lake env lean Erdos1201/Audit.lean`) checks the single final conditional theorem `Erdos1201.erdos_problem_1201`, listing only standard Lean axioms and no `sorryAx`. Auxiliary theorems and modules are compiled and verified as dependencies within the library build, but are not claimed to be individually axiom-audited by this one check. Across the codebase, there are strictly zero `sorry`, zero `admit`, zero custom `axiom` declarations, and zero `unsafe` constructs.
-- **Two Analytic Results Remain Explicit Hypotheses**: The results `QuantitativeShortIntervalInput` and `SmoothCountingInput` remain explicit `Prop` hypotheses in the final theorems. A clean build verifies the implication from these two analytic hypotheses to the Erdős problem conclusions, rather than an unconditional proof.
+without analytic assumptions. Its proof uses mathlib’s Chebyshev bounds and Abel summation, followed by exact finite counting of large-prime multiples. The original density deduction is proved using this one-sided estimate instead of a full smooth-number asymptotic.
 
-### Final Verified Wrapper Theorems
-The top-level theorems, exported in [`Erdos1201/Main.lean`](Erdos1201/Main.lean) (with the final theorem `erdos_problem_1201` axiom-audited in [`Erdos1201/Audit.lean`](Erdos1201/Audit.lean)), are:
-- `Erdos1201.theorem1`:
-  ```lean
-  theorem theorem1
-      (hMR : QuantitativeShortIntervalInput) (hSmooth : SmoothCountingInput)
-      {ε : ℝ} (hε : 0 < ε) :
-      Tendsto (fun h : ℕ => upperDensity (badSet ε h)) atTop (𝓝 0)
-  ```
-- `Erdos1201.erdos_problem_1201`:
-  ```lean
-  theorem erdos_problem_1201
-      (hMR : QuantitativeShortIntervalInput) (hSmooth : SmoothCountingInput)
-      {ε η : ℝ} (hε : 0 < ε) (hη : 0 < η) :
-      ∃ k : ℕ, 1 - η ≤ lowerDensity (goodSet ε k)
-  ```
+**Neither `QuantitativeShortIntervalInput` nor the stronger `SmoothCountingInput` has been proved in this repository.** The latter is no longer needed by the new route. The overall Erdős theorem remains conditional on MR.
 
-Supporting bridge theorems connecting the external hypotheses to the core proof:
-- [`Erdos1201.QuantitativeShortIntervalInput.to_shortIntervalInput`](Erdos1201/Quantitative.lean): Bridges `QuantitativeShortIntervalInput` to `ShortIntervalInput`.
-- [`Erdos1201.SmoothCountingInput.to_smoothMeanInput`](Erdos1201/SmoothAsymptotics.lean): Bridges `SmoothCountingInput` to `SmoothMeanInput`.
-- [`Erdos1201.bad_upperDensity_tendsto_zero`](Erdos1201/Proof.lean) and [`Erdos1201.erdos1201`](Erdos1201/Proof.lean): The core deductions from the qualitative interfaces.
+See [SMOOTH_EXTENSION.md](SMOOTH_EXTENSION.md) for the elementary proof, module map, exact verification scope, and remaining obligation.
 
-## Mathematical Formulations and Conventions
+## Original API
 
-The formalization defines:
-- **Consecutive Product**: $\Pi(n, h) = \prod_{j=1}^h (n + j)$, containing $h$ factors.
-- **Block Length Correspondence**: The problem's $k$ consecutive integers correspond to block length $h = k + 1$ (the product $\prod_{j=1}^{k+1}(n+j)$).
-- **Largest Prime Factor**: $P^+(n)$ denotes the largest prime factor of $n$, with conventions $P^+(1) = 1$ and $P^+(0) = 1$ (extended to zero by the value 1; zero is excluded from both the good and bad sets by $n \ge 1$). In [`Erdos1201/PrimeFactor.lean`](Erdos1201/PrimeFactor.lean), we formally verify semantic equivalence between $P^+(n) \le Y$ and the prime-divisor smoothness predicate `Smooth Y n` for $n \ge 1$ and $Y \ge 1$.
-- **Bad and Good Sets**:
-  - Bad set: $\text{badSet}(\varepsilon, h) = \{n \in \mathbb{N}_{\ge 1} \mid P^+(\Pi(n, h)) \le n^{1 - \varepsilon}\}$.
-  - Good set: $\text{goodSet}(\varepsilon, k) = \{n \in \mathbb{N}_{\ge 1} \mid P^+(\Pi(n, k + 1)) > n^{1 - \varepsilon}\}$.
-  - Zero is excluded from both sets.
-- **Asymptotic Density**: Defined on positive integers using `limsup` (upper density $\overline{d}$) and `liminf` (lower density $\underline{d}$) of normalized counting measures in $[1, N]$. Complementation gives $\underline{d}(\text{goodSet}(\varepsilon, k)) = 1 - \overline{d}(\text{badSet}(\varepsilon, k + 1))$.
-- **Dyadic Decompositions and Intervals**: Dyadic block averages use half-open intervals $[X, 2X)$; counting shells use $(X, 2X]$. Endpoint corrections between inclusive smooth counts and half-open averages are bounded and proven to vanish asymptotically.
+The original wrappers in `Erdos1201/Main.lean` are preserved unchanged:
 
-## Reproducible Build
+- `Erdos1201.theorem1` takes `QuantitativeShortIntervalInput` and `SmoothCountingInput` and proves that the bad-set upper density tends to zero with block length.
+- `Erdos1201.erdos_problem_1201` takes the same two inputs and proves the lower-density conclusion.
 
-### Prerequisites
-Install [elan](https://github.com/leanprover/elan) (Lean version manager).
+The bridges from the quantitative estimate to `ShortIntervalInput` and from the smooth counting limits to `SmoothMeanInput` remain proved. Defining an analytic input as a `Prop` is not a proof of that input.
 
-The toolchain is strictly pinned to:
-- Lean: `leanprover/lean4:v4.34.0-rc2` (in [`lean-toolchain`](lean-toolchain))
-- Mathlib: `85e3a25e006c35636f0e53b0e9296caca2685bc0` (in [`lakefile.toml`](lakefile.toml) and [`lake-manifest.json`](lake-manifest.json))
+## New API
 
-### Build and Audit Commands
+The extension exports:
+
+- `Erdos1201.smoothMeanGapInput`: an unconditional eventual upper bound strictly below one for the smooth-number block mean.
+- `Erdos1201.erdos_problem_1201_of_MR` and `Erdos1201.theorem1_of_MR`: the density conclusions with only the quantitative MR hypothesis.
+- `Erdos1201.erdos_problem_1201_of_shortInterval` and `Erdos1201.theorem1_of_shortInterval`: corresponding versions with the qualitative MR hypothesis.
+
+## Mathematical conventions
+
+`consecutiveProduct n h` is the product of the `h` integers `n, ..., n+h-1`. The problem parameter `k` corresponds to `h = k+1`, giving `n(n+1)...(n+k)`.
+
+The largest-prime-factor conventions are `P⁺(1)=1` and `P⁺(0)=1`; zero is excluded from both good and bad sets. Good means `P⁺(n(n+1)...(n+k)) > n^(1-ε)`.
+
+Counting for density is on positive integers `[1,N]`. Upper and lower density are the real limsup and liminf of normalized counts. The conclusion is a **lower-density** statement, not a claim that ordinary natural density exists.
+
+Block averages use `[X,2X)`, whereas dyadic counting shells use `(X,2X]`. The conversion is proved with its exact endpoint correction. In the new smooth-number estimate the resulting error is `(B+1)/X`.
+
+## Verification
+
+The toolchain is pinned to:
+
+- Lean `leanprover/lean4:v4.34.0-rc2`.
+- Mathlib commit `85e3a25e006c35636f0e53b0e9296caca2685bc0`.
+
 From the repository root:
+
 ```sh
-# Fetch precompiled Mathlib build artifacts
 lake exe cache get
-
-# Compile the project
 lake build
-
-# Verify axiom dependencies of the final conditional theorem
-lake env lean Erdos1201/Audit.lean
+lake env lean Erdos1201/Smooth/Audit.lean
 ```
 
-Individual modules can also be compiled and checked directly:
-```sh
-lake env lean Erdos1201/Proof.lean
-```
+The new modules and the root import were checked with the pinned Lean compiler. The new audit uses **`#guard_msgs`**, not just `#print axioms`: it fails if the expected axiom report changes. The audited new results depend only on `propext`, `Classical.choice`, and `Quot.sound`.
 
-## Module Structure
+There are no new `sorry`, `admit`, custom `axiom`, `unsafe`, or `native_decide` constructs in the extension. A clean axiom audit checks foundational dependencies; it does not remove hypotheses explicitly present in a theorem’s type.
 
-| Module | Role | Status |
-| --- | --- | --- |
-| [`Erdos1201/Basic.lean`](Erdos1201/Basic.lean) | Largest prime factors, consecutive products, smooth indicators, complete multiplicativity, divisor bound, and the mean-gap contradiction. | Verified |
-| [`Erdos1201/Density.lean`](Erdos1201/Density.lean) | Counting on positive integers, upper/lower density, dyadic partition bounds, and set complementation. | Verified |
-| [`Erdos1201/AnalyticInputs.lean`](Erdos1201/AnalyticInputs.lean) | Explicit qualitative analytic interfaces (`ShortIntervalInput`, `SmoothMeanInput`). | Verified |
-| [`Erdos1201/Proof.lean`](Erdos1201/Proof.lean) | Scale separation, inclusion in the exceptional set, upper density limit, and the fixed-$k$ conclusion. | Verified |
-| [`Erdos1201/Quantitative.lean`](Erdos1201/Quantitative.lean) | The quantitative short-interval hypothesis (`QuantitativeShortIntervalInput`) and proof of `to_shortIntervalInput`. | Verified |
-| [`Erdos1201/SmoothAsymptotics.lean`](Erdos1201/SmoothAsymptotics.lean) | Smooth count $\Psi(X, X^\beta)$ definition, endpoint corrections, and proof that `SmoothCountingInput` implies `SmoothMeanInput`. | Verified |
-| [`Erdos1201/PrimeFactor.lean`](Erdos1201/PrimeFactor.lean) | Semantic bridges relating the prime-divisor smoothness predicate (`Smooth`) to the largest-prime-factor convention (`largestPrimeFactor` / $P^+$), verifying $P^+(1) = 1$, $P^+(p) = p$, and `Smooth Y n ↔ P⁺(n) ≤ Y`. | Verified |
-| [`Erdos1201/Main.lean`](Erdos1201/Main.lean) | Final wrappers `Erdos1201.theorem1` and `Erdos1201.erdos_problem_1201` connecting quantitative and smooth inputs. | Verified |
-| [`Erdos1201/MR/Arithmetic.lean`](Erdos1201/MR/Arithmetic.lean) | Finite prime-divisor counting functions (`divisorsIn`, `omegaIn`) and corrected denominator count $\omega_S(m) + \mathbf{1}_{p \nmid m}$. | Verified |
-| [`Erdos1201/MR/Ramare.lean`](Erdos1201/MR/Ramare.lean) | Exact finite Ramaré partition of unity, prime/cofactor reindexing, and three-part decomposition with prime-square correction. | Verified |
-| [`Erdos1201/MR/Exceptional.lean`](Erdos1201/MR/Exceptional.lean) | Finite Chebyshev $L^2$ cardinality inequality and two-energy exceptional reduction. | Verified |
-| [`Erdos1201/MR/SupportReduction.lean`](Erdos1201/MR/SupportReduction.lean) | Finite support removal, triangle-inequality bounds, missing mass transport, and discrepancy reduction with endpoint error. | Verified |
-| [`Erdos1201/MR.lean`](Erdos1201/MR.lean) | Aggregator module re-exporting the four Matomäki–Radziwiłł auxiliary modules under `Erdos1201.MR`. | Verified |
-| [`Erdos1201/Audit.lean`](Erdos1201/Audit.lean) | Automated `#print axioms` audit asserting absence of `sorryAx` for the final conditional theorem `Erdos1201.erdos_problem_1201`. | Verified |
-| [`Erdos1201.lean`](Erdos1201.lean) | Root library module re-exporting the audit, main verification results, prime-factor bridges, and MR auxiliary modules. | Verified |
+The original `Erdos1201/Audit.lean` remains a printed report for the original final theorem. The separate new audit is the enforcing check.
 
-> [!NOTE]
-> All modules are fully verified and compile cleanly under Lean 4.34.0-rc2. Full repository verification is automated via `lake build` and `lake env lean Erdos1201/Audit.lean`.
+## Modules
 
-## Analytic References
+The original `Basic`, `PrimeFactor`, `Density`, `AnalyticInputs`, `Proof`, `Quantitative`, `SmoothAsymptotics`, and `Main` modules are retained. The additional files under `Erdos1201/Smooth/` are:
 
-These are the external results utilized in the original paper by Przemek Chojecki together with ChatGPT 5.5:
+| Module | Role |
+| --- | --- |
+| `MeanGap` | One-sided interface and deduction of the density conclusions from it. |
+| `PrimeBand` | Chebyshev lower bound, Abel identity, and reciprocal-prime inequality. |
+| `PowerBand` | Prime reciprocal mass between powers and asymptotic error bounds. |
+| `PrimeMultiples` | Exact finite multiple counts and smooth-number deficit estimate. |
+| `Unconditional` | Proved mean-gap input and the one-MR-input final wrappers. |
+| `Audit` | Enforced axiom checks for the main new results. |
 
-- K. Matomäki and M. Radziwiłł, *Multiplicative functions in short intervals*, Annals of Mathematics (2) **183** (2016), 1015–1056, Theorem 1 (and corrected arXiv:1501.04585v4, 2017).
-- G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Cambridge Studies in Advanced Mathematics **46** (1995), Chapter III.5.
+The `Erdos1201/MR/` modules prove finite divisor arithmetic, Ramaré decompositions, Chebyshev exceptional-set bounds, and support-removal estimates. **They do not prove the MR short-interval theorem.** No continuous mean-value, large-value, or sieve analysis needed for that theorem is claimed complete here.
+
+## References
+
+- K. Matomäki and M. Radziwiłł, *Multiplicative functions in short intervals*, Annals of Mathematics **183** (2016), 1015–1056; corrected arXiv:1501.04585v4.
+- G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Cambridge Studies in Advanced Mathematics **46** (1995), Chapter III.5 (for the original smooth-number input, bypassed in the new route).
+- Pinned mathlib files `Mathlib/NumberTheory/Chebyshev.lean` and `Mathlib/NumberTheory/AbelSummation.lean` (used in the new route).
