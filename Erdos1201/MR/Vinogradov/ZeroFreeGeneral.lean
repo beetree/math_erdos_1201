@@ -283,6 +283,53 @@ theorem zero_free_of_zeta_bound (θ φ : ℝ → ℝ)
   obtain ⟨C, hC, h341_bound⟩ := h341
   exact zero_free_of_341_bound θ φ hθ hφ C hC h341_bound
 
+
+lemma zeta_analytic_on_closedBall_1 (c : ℂ) (hc : 1 < |c.im|) :
+    AnalyticOnNhd ℂ riemannZeta (Metric.closedBall c 1) := by
+  exact analyticOn_riemannZeta.mono (closedBall_c_one_subset_ne_one c hc)
+
+lemma log_Deriv_Expansion_Zeta_general
+    (r1 r R1 R : ℝ)
+    (hr1_pos : 0 < r1) (hr1_lt_r : r1 < r)
+    (hr_pos : 0 < r) (hr_lt_R1 : r < R1) (hR1_pos : 0 < R1) (hR1_lt_R : R1 < R) (hR_lt_1 : R < 1)
+    (c : ℂ) (hc_re : 1 < c.re) (hc_im : 3 ≤ |c.im|)
+    (B : ℝ) (hB : 1 < B) (h_bound : ∀ z ∈ closedBall c R, ‖riemannZeta z‖ < B)
+    (hfin : (zerosetKfRc R1 c riemannZeta).Finite) :
+    ∀ z ∈ closedBall c r1 \ zerosetKfRc R1 c riemannZeta,
+    ‖logDerivZeta z - ∑ ρ ∈ hfin.toFinset,
+      ((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)‖ ≤
+    (16 * r^2 / ((r - r1)^3) + 1 / ((R^2 / R1 - R1) * Real.log (R / R1))) * Real.log (B / ‖riemannZeta c‖) := by
+  intro z hzmem
+  have h_im_gt_1 : 1 < |c.im| := by linarith
+  have hζ_analytic : AnalyticOnNhd ℂ riemannZeta (closedBall c 1) := zeta_analytic_on_closedBall_1 c h_im_gt_1
+  have hζ_c_ne : riemannZeta c ≠ 0 := by apply riemannZeta_ne_zero_of_one_lt_re hc_re
+  have hfin_shift : (zerosetKfRc R1 (0 : ℂ) (fun u => riemannZeta (u + c) / riemannZeta c)).Finite := by
+    have h_bij := fc_zeros R1 hR1_pos c riemannZeta hζ_c_ne hζ_analytic
+    have himg : ((fun ρ => ρ - c) '' (zerosetKfRc R1 c riemannZeta)).Finite := hfin.image _
+    simpa [h_bij] using himg
+  have hz0mem : (z - c) ∈ closedBall (0 : ℂ) r1 \ zerosetKfRc R1 (0 : ℂ) (fun u => riemannZeta (u + c) / riemannZeta c) := by
+    have hiff := DminusK r1 R1 hr1_pos hR1_pos c riemannZeta hζ_analytic hζ_c_ne (z - c)
+    exact (hiff).mpr (by simpa [sub_add_cancel] using hzmem)
+  have hineq0 := (final_ineq2 B hB r1 r R R1 hr1_pos hr1_lt_r hr_lt_R1 hR1_lt_R hR_lt_1 c riemannZeta hζ_analytic hζ_c_ne h_bound hfin_shift) (z - c) hz0mem
+  rcases hzmem with ⟨hz_ball, hz_notin⟩
+  have hr1_lt_R1' : r1 < R1 := lt_trans hr1_lt_r hr_lt_R1
+  have hz_in_ball_R1 : z ∈ closedBall c R1 := by
+    have hz_le_r1 : dist z c ≤ r1 := by simpa [mem_closedBall] using hz_ball
+    have hr1_le_R1 : r1 ≤ R1 := le_of_lt hr1_lt_R1'
+    have hz_le_R1 : dist z c ≤ R1 := le_trans hz_le_r1 hr1_le_R1
+    simpa [mem_closedBall] using hz_le_R1
+  have hzeta_ne : riemannZeta z ≠ 0 := by intro hz0; exact hz_notin ⟨hz_in_ball_R1, hz0⟩
+  have hcancel_frac : (deriv (fun x => riemannZeta (x + c)) (z - c) / riemannZeta c) / (riemannZeta z / riemannZeta c) = deriv (fun x => riemannZeta (x + c)) (z - c) / riemannZeta z := by
+    simpa using (frac_cancel_const (x := deriv (fun x => riemannZeta (x + c)) (z - c)) (y := riemannZeta z) (c := riemannZeta c) hζ_c_ne hzeta_ne)
+  have hcancel_all : (deriv (fun x => riemannZeta (x + c)) (z - c) / riemannZeta c) / (riemannZeta z / riemannZeta c) = deriv riemannZeta z / riemannZeta z := by
+    simpa [deriv_comp_add_const, sub_add_cancel] using hcancel_frac
+  have hineq1 : ‖(deriv riemannZeta z / riemannZeta z) - ∑ ρ ∈ hfin_shift.toFinset, ((analyticOrderAt (fun u => riemannZeta (u + c) / riemannZeta c) ρ).toNat : ℂ) / ((z - c) - ρ)‖ ≤ (16 * r^2 / ((r - r1)^3) + 1 / ((R^2 / R1 - R1) * Real.log (R / R1))) * Real.log (B / ‖riemannZeta c‖) := by
+    simpa [hcancel_all] using hineq0
+  have hsum_eq := shifted_zeros_correspondence R1 hR1_pos c z riemannZeta hζ_c_ne hζ_analytic hfin hfin_shift
+  have hineq2 : ‖(deriv riemannZeta z / riemannZeta z) - ∑ ρ ∈ hfin.toFinset, ((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)‖ ≤ (16 * r^2 / ((r - r1)^3) + 1 / ((R^2 / R1 - R1) * Real.log (R / R1))) * Real.log (B / ‖riemannZeta c‖) := by
+    simpa [hsum_eq] using hineq1
+  simpa [logDerivZeta] using hineq2
+
 end Erdos1201.MR.Vinogradov
 
 namespace Erdos1201.MR
@@ -297,6 +344,8 @@ export Erdos1201.MR.Vinogradov (
   zero_free_of_341_bound
   zero_free_of_classical_subordinate
   zero_free_of_zeta_bound
+  zeta_analytic_on_closedBall_1
+  log_Deriv_Expansion_Zeta_general
 )
 
 end Erdos1201.MR

@@ -4,6 +4,7 @@ import Erdos1201.MR.Analysis.DyadicPrimeSums
 import Erdos1201.MR.Analysis.HilbertInequality
 import Erdos1201.MR.Analysis.KusminLandau
 import Erdos1201.MR.Analysis.MeanValueTheorem
+import Erdos1201.MR.Analysis.PhaseSumDyadic
 import Erdos1201.MR.Analysis.ShortRangePrimeMass
 import Erdos1201.MR.Analysis.ShortRangePrimeMassBT
 import Erdos1201.MR.Analysis.VanDerCorput
@@ -13,9 +14,12 @@ import Erdos1201.MR.Analysis.WellSpaced
 import Erdos1201.MR.Analysis.WeylDifferencing
 import Erdos1201.MR.Arithmetic
 import Erdos1201.MR.Decomposition.Lemma12
+import Erdos1201.MR.Decomposition.Lemma12Square
 import Erdos1201.MR.Decomposition.MediumAverage
 import Erdos1201.MR.Exceptional
 import Erdos1201.MR.Parseval.FourierAlias
+import Erdos1201.MR.Parseval.HighFrequency
+import Erdos1201.MR.Parseval.LowFrequency
 import Erdos1201.MR.Parseval.PlancherelL1L2
 import Erdos1201.MR.Parseval.SaffariVaughan
 import Erdos1201.MR.Parseval.WindowKernel
@@ -41,6 +45,7 @@ import Erdos1201.MR.Vinogradov.LinearBilinearSum
 import Erdos1201.MR.Vinogradov.Linnik
 import Erdos1201.MR.Vinogradov.PrimeSelection
 import Erdos1201.MR.Vinogradov.PrimeSelectionMain
+import Erdos1201.MR.Vinogradov.PrimeSelectionFinal3
 import Erdos1201.MR.Vinogradov.TaylorReduction
 import Erdos1201.MR.Vinogradov.TaylorReductionMain
 import Erdos1201.MR.Vinogradov.ZeroFreeGeneral
