@@ -10,8 +10,7 @@ import Erdos1201.MR.Exceptional
 The original paper and proof for Erdős Problem #1201 are by Przemek Chojecki together with
 ChatGPT 5.5 (`erdos1201.pdf`).
 
-These auxiliary lemmas are adapted from the user-supplied incomplete expert
-Matomäki–Radziwiłł formalization (specifically `MR/SupportReduction.lean`).
+These Matomäki–Radziwiłł auxiliary lemmas formalize finite reductions.
 
 Boundary note: These lemmas are elementary finite combinatorial and triangle-inequality
 reductions relating full interval discrepancies to restricted discrepancies, missing mass,

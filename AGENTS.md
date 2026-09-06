@@ -9,6 +9,12 @@ explanations or reports. Never present the original mathematical argument as our
 The source paper is `erdos1201.pdf`, downloaded from
 https://www.ulam.ai/research/erdos1201.pdf.
 
+Matomäki–Radziwiłł (MR) auxiliary code needs no provenance attribution to the
+user or private `expert_advice` materials; describe these neutrally as
+Matomäki–Radziwiłł auxiliary lemmas or finite reductions. Mathematical citations
+to Matomäki and Radziwiłł (and arXiv:1501.04585v4) and original-paper attribution
+to Przemek Chojecki together with ChatGPT 5.5 must remain.
+
 ## Lean Workflow and Environment
 
 - **Pinned toolchain**: Lean `leanprover/lean4:v4.34.0-rc2` (specified in `lean-toolchain`).

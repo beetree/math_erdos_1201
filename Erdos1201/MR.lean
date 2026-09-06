@@ -6,16 +6,13 @@ import Erdos1201.MR.SupportReduction
 /-!
 # Matomäki–Radziwiłł Auxiliary Modules
 
-## Attribution & Provenance
+## Attribution
 
 * **Original Erdős #1201 Paper & Proof**: The original paper and mathematical proof
   for Erdős Problem #1201 are by **Przemek Chojecki together with ChatGPT 5.5** (`erdos1201.pdf`).
-* **Source of Ported Auxiliary Infrastructure**: Adapted from the user-supplied incomplete
-  expert Matomäki–Radziwiłł formalization (`expert_advice/mr-formalization-attempt.zip`,
-  specifically candidate modules `MR/Arithmetic.lean`, `MR/Ramare.lean`, `MR/Exceptional.lean`,
-  and `MR/SupportReduction.lean`), based on Section 5, equation (16) of the authors' corrected
+* **Matomäki–Radziwiłł Auxiliary Lemmas**: Finite reductions and auxiliary infrastructure supporting
+  the Matomäki–Radziwiłł framework, based on Section 5, equation (16) of the authors' corrected
   version of the Matomäki–Radziwiłł paper (arXiv:1501.04585v4, 15 Oct 2017).
-  No external expert name is invented.
 
 ## Analytic Trust Boundary
 

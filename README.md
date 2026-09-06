@@ -2,10 +2,10 @@
 
 A Lean 4.34.0-rc2 formal reproduction of the proof in [A note on Erdős Problem #1201](https://www.ulam.ai/research/erdos1201.pdf), available locally as [erdos1201.pdf](erdos1201.pdf).
 
-## Attribution & Provenance
+## Attribution
 
 * **Original Paper and Deduction**: **The original paper and proof are by Przemek Chojecki together with ChatGPT 5.5.** Credit for the mathematical argument and proof strategy belongs entirely to them. This repository is an independent formalization in Lean 4 verifying their deduction.
-* **Adapted Matomäki–Radziwiłł Auxiliary Infrastructure**: The auxiliary modules under [`Erdos1201/MR/`](Erdos1201/MR.lean) are adapted from the user-supplied incomplete expert Matomäki–Radziwiłł formalization (based on Section 5, equation 16 of arXiv:1501.04585v4). No external expert name is invented.
+* **Matomäki–Radziwiłł Auxiliary Lemmas**: The auxiliary modules under [`Erdos1201/MR/`](Erdos1201/MR.lean) formalize finite reductions supporting the Matomäki–Radziwiłł framework (based on Section 5, equation 16 of arXiv:1501.04585v4).
 
 Preserve this attribution prominently throughout the repository, including in all documentation, module docstrings, and derived artifacts. See [AGENTS.md](AGENTS.md) for contributor and agent workflow guidelines.
 
@@ -17,19 +17,19 @@ The two external inputs are deep number-theoretic results that are isolated as e
 1. **Quantitative Matomäki–Radziwiłł Short-Interval Theorem** (`QuantitativeShortIntervalInput`): An explicit quantitative short-interval variance estimate for completely multiplicative functions with values in $[-1, 1]$. In [`Erdos1201/Quantitative.lean`](Erdos1201/Quantitative.lean), we formally prove that this implies the qualitative uniform interface `ShortIntervalInput` (`QuantitativeShortIntervalInput.to_shortIntervalInput`).
 2. **Dickman–de Bruijn Smooth-Number Asymptotics** (`SmoothCountingInput`): The asymptotic density of smooth numbers $\Psi(X, X^\beta)/X \to r < 1$ and $\Psi(2X, X^\beta)/X \to 2r$ as natural $X \to \infty$ for fixed $0 < \beta < 1$. In [`Erdos1201/SmoothAsymptotics.lean`](Erdos1201/SmoothAsymptotics.lean), we formally prove that this implies the block-mean interface `SmoothMeanInput` (`SmoothCountingInput.to_smoothMeanInput`).
 
-### Checked Expert-Derived Auxiliary Components (`Erdos1201.MR`)
+### Checked Matomäki–Radziwiłł Auxiliary Lemmas (`Erdos1201.MR`)
 
-To substantiate the mathematical foundations underlying the Matomäki–Radziwiłł theorem, four self-contained auxiliary modules have been adapted and fully verified under `Erdos1201.MR`:
+To substantiate the mathematical foundations underlying the Matomäki–Radziwiłł theorem, four self-contained auxiliary modules have been formalized and fully verified under `Erdos1201.MR`:
 - [`Erdos1201/MR/Arithmetic.lean`](Erdos1201/MR/Arithmetic.lean): Finite prime-divisor counting functions (`divisorsIn`, `omegaIn`), the corrected divisor count denominator $\text{correctedCount}(S, p, m) = \omega_S(m) + \mathbf{1}_{p \nmid m}$ from arXiv:1501.04585v4, and prime-square divisor detection.
 - [`Erdos1201/MR/Ramare.lean`](Erdos1201/MR/Ramare.lean): Exact finite partition-of-unity identity over fields of characteristic zero, prime/cofactor reindexing via `cofactors`, and the three-part Ramaré decomposition separating the factorized coprime main term, the explicit prime-square correction, and the unsifted residual.
 - [`Erdos1201/MR/Exceptional.lean`](Erdos1201/MR/Exceptional.lean): Finite Chebyshev inequality (`exceptional_card_le_energy`) bounding exceptional set cardinality by explicit $L^2$ energy, and the two-energy exceptional reduction (`exceptional_card_le_two_energies`).
-- [`Erdos1201/MR/SupportReduction.lean`](Erdos1201/MR/SupportReduction.lean): Support-set removal (`average_restriction_error`), missing mass transport (`missingAverage_le`), and the finite discrepancy reduction (`average_discrepancy_bound` and `exceptional_card_le_restricted_energies`) with exact endpoint mass error $|(\#I)/h - (\#J)/X|$.
+- [`Erdos1201/MR/SupportReduction.lean`](Erdos1201/MR/SupportReduction.lean): Support-set removal (`average_restriction_error`), missing mass transport (`missingAverage_le`), and the finite discrepancy reduction (`average_discrepancy_bound` and `exceptional_card_le_restricted_energies`) with exact endpoint mass error $|\lvert I\rvert/h - \lvert J\rvert/X|$.
 - [`Erdos1201/MR.lean`](Erdos1201/MR.lean): Aggregator module importing and re-exporting all four verified MR auxiliary modules.
 
 ### Remaining Analytical Proof Gaps
 
 > [!IMPORTANT]
-> **These ported auxiliary lemmas DO NOT prove `QuantitativeShortIntervalInput` (or `ShortIntervalInput`), nor do they discharge the Matomäki–Radziwiłł theorem.**
+> **These auxiliary lemmas DO NOT prove `QuantitativeShortIntervalInput` (or `ShortIntervalInput`), nor do they discharge the Matomäki–Radziwiłł theorem.**
 > They supply only finite combinatorial, algebraic, and Chebyshev reduction scaffolding.
 
 The remaining analytical gaps required for an unconditional proof of the Matomäki–Radziwiłł theorem comprise:
@@ -124,7 +124,7 @@ lake env lean Erdos1201/Proof.lean
 | [`Erdos1201/MR/Ramare.lean`](Erdos1201/MR/Ramare.lean) | Exact finite Ramaré partition of unity, prime/cofactor reindexing, and three-part decomposition with prime-square correction. | Verified |
 | [`Erdos1201/MR/Exceptional.lean`](Erdos1201/MR/Exceptional.lean) | Finite Chebyshev $L^2$ cardinality inequality and two-energy exceptional reduction. | Verified |
 | [`Erdos1201/MR/SupportReduction.lean`](Erdos1201/MR/SupportReduction.lean) | Finite support removal, triangle-inequality bounds, missing mass transport, and discrepancy reduction with endpoint error. | Verified |
-| [`Erdos1201/MR.lean`](Erdos1201/MR.lean) | Aggregator module re-exporting the four adapted Matomäki–Radziwiłł auxiliary modules under `Erdos1201.MR`. | Verified |
+| [`Erdos1201/MR.lean`](Erdos1201/MR.lean) | Aggregator module re-exporting the four Matomäki–Radziwiłł auxiliary modules under `Erdos1201.MR`. | Verified |
 | [`Erdos1201/Audit.lean`](Erdos1201/Audit.lean) | Automated `#print axioms` audit asserting absence of `sorryAx` for the final conditional theorem `Erdos1201.erdos_problem_1201`. | Verified |
 | [`Erdos1201.lean`](Erdos1201.lean) | Root library module re-exporting the audit, main verification results, prime-factor bridges, and MR auxiliary modules. | Verified |
 

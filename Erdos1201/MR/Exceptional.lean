@@ -9,8 +9,8 @@ import Mathlib.Tactic
 The original paper and proof for Erdős Problem #1201 are by Przemek Chojecki together with
 ChatGPT 5.5 (`erdos1201.pdf`).
 
-These auxiliary lemmas are adapted from the user-supplied incomplete expert
-Matomäki–Radziwiłł formalization (specifically `MR/Exceptional.lean`).
+These Matomäki–Radziwiłł auxiliary lemmas formalize finite reductions
+and Chebyshev estimates.
 
 Boundary note: These lemmas are elementary finite counting and Chebyshev estimates.
 They DO NOT prove `QuantitativeShortIntervalInput` or the Matomäki–Radziwiłł theorem;

@@ -10,8 +10,8 @@ import Mathlib.Tactic.NormNum
 The original paper and proof for Erdős Problem #1201 are by Przemek Chojecki together
 with ChatGPT 5.5 (`erdos1201.pdf`).
 
-These auxiliary lemmas are adapted from the user-supplied incomplete expert
-Matomäki–Radziwiłł formalization (based on Section 5, equation 16 of arXiv:1501.04585v4).
+These Matomäki–Radziwiłł auxiliary lemmas formalize finite reductions
+based on Section 5, equation 16 of arXiv:1501.04585v4.
 These lemmas DO NOT prove `QuantitativeShortIntervalInput`.
 
 The argument applies to an arbitrary finite set of primes, not merely primes in an interval.
