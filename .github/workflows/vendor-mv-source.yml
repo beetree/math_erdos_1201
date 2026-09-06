@@ -1,0 +1,29 @@
+name: Vendor MV source transport
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [formalize/mr-20260906]
+    paths: [.github/workflows/vendor-mv-source.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch verified MV source
+        run: |
+          git clone --depth 1 https://github.com/ZafirGu/zeta-23-lean.git /tmp/zeta23
+          mkdir -p payload/Zeta23/MV
+          cp /tmp/zeta23/Zeta23/MV.lean payload/Zeta23/
+          cp /tmp/zeta23/Zeta23/Hypotheses.lean payload/Zeta23/
+          cp /tmp/zeta23/Zeta23/MV/{Spacing,Quadratic,EigenIdentity,Eigen,Duality,Final}.lean payload/Zeta23/MV/
+          cp /tmp/zeta23/LICENSE payload/ZETA23_LICENSE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zeta23-mv-source
+          path: payload
+          retention-days: 1
