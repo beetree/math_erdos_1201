@@ -1,0 +1,14 @@
+module
+
+public import Erdos1201.Vendor.NumberTheory.BoundedPrimeGaps.BombieriVinogradov.Analytic.AdditiveLargeSieve.CharacterLargeSieve
+
+@[expose] public section
+
+/-!
+# The consecutive-interval additive and primitive-character large sieve
+
+This facade exposes Montgomery--Vaughan's coefficient-one additive large
+sieve and its Akbary--Hambrook primitive-character specialization. The proof
+is split at finite duality, the exact geometric kernel, reduced-fraction
+geometry, and fixed-modulus character reduction. See SEM-448.
+-/

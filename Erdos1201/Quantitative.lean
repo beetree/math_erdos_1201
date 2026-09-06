@@ -93,6 +93,6 @@ theorem erdos1201_of_quantitative
     (hMR : QuantitativeShortIntervalInput) (hSmooth : SmoothMeanInput)
     {ε η : ℝ} (hε : 0 < ε) (hη : 0 < η) :
     ∃ k : ℕ, 1 - η ≤ lowerDensity (goodSet ε k) :=
-  erdos1201 hMR.to_shortIntervalInput hSmooth hε hη
+  erdos1201 hMR.to_shortIntervalInput hSmooth.to_smoothUpperInput hε hη
 
 end Erdos1201

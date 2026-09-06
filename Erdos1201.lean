@@ -1,4 +1,6 @@
 import Erdos1201.Audit
+import Erdos1201.SmoothAsymptotics
+import Erdos1201.MR.All
 import Erdos1201.PrimeFactor
 import Erdos1201.MR
 

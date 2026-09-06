@@ -65,7 +65,7 @@ theorem bad_block_bound {ε β r δ η : ℝ} {h X : ℕ}
 
 /-- For `0 < ε < 1`, all sufficiently long blocks have arbitrarily small bad upper density. -/
 theorem eventually_upperDensity_bad_le_of_lt_one
-    (hMR : ShortIntervalInput) (hSmooth : SmoothMeanInput)
+    (hMR : ShortIntervalInput) (hSmooth : SmoothUpperInput)
     {ε η : ℝ} (hε : 0 < ε) (hε1 : ε < 1) (hη : 0 < η) :
     ∀ᶠ h : ℕ in atTop, upperDensity (badSet ε h) ≤ η := by
   let β : ℝ := 1 - ε / 2
@@ -74,7 +74,7 @@ theorem eventually_upperDensity_bad_le_of_lt_one
   have hδ : 0 < δ := by dsimp [δ]; linarith
   have hmean' : ∀ᶠ X : ℕ in atTop,
       blockMean (smoothIndicator ((X : ℝ) ^ β)) X ≤ r + δ :=
-    (hmean.eventually (gt_mem_nhds (by linarith : r < r + δ))).mono (fun _ h => h.le)
+    hmean.mono (fun _ h => h.trans (by linarith))
   have hscale := eventually_scale_separation (a := 1 - ε) (β := β)
     (by linarith) (by dsimp [β]; linarith)
   filter_upwards [hMR δ hδ (η / 2) (by positivity), eventually_gt_atTop 0] with h hmr hh
@@ -97,7 +97,7 @@ theorem badSet_antitone {ε₁ ε₂ : ℝ} (hε : ε₁ ≤ ε₂) (h : ℕ) :
 
 /-- The eventual bound, for every positive epsilon (including epsilon at least one). -/
 theorem eventually_upperDensity_bad_le
-    (hMR : ShortIntervalInput) (hSmooth : SmoothMeanInput)
+    (hMR : ShortIntervalInput) (hSmooth : SmoothUpperInput)
     {ε η : ℝ} (hε : 0 < ε) (hη : 0 < η) :
     ∀ᶠ h : ℕ in atTop, upperDensity (badSet ε h) ≤ η := by
   let ε' : ℝ := min ε (1 / 2)
@@ -108,7 +108,7 @@ theorem eventually_upperDensity_bad_le
 
 /-- Theorem 1 in the original paper, conditional on the two analytic input propositions. -/
 theorem bad_upperDensity_tendsto_zero
-    (hMR : ShortIntervalInput) (hSmooth : SmoothMeanInput)
+    (hMR : ShortIntervalInput) (hSmooth : SmoothUpperInput)
     {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun h : ℕ => upperDensity (badSet ε h)) atTop (𝓝 0) := by
   apply tendsto_order.mpr
@@ -129,7 +129,7 @@ theorem good_lowerDensity_eq (ε : ℝ) (k : ℕ) :
 
 /-- Erdős problem #1201 as stated in the paper, conditional on the cited analytic inputs. -/
 theorem erdos1201
-    (hMR : ShortIntervalInput) (hSmooth : SmoothMeanInput)
+    (hMR : ShortIntervalInput) (hSmooth : SmoothUpperInput)
     {ε η : ℝ} (hε : 0 < ε) (hη : 0 < η) :
     ∃ k : ℕ, 1 - η ≤ lowerDensity (goodSet ε k) := by
   obtain ⟨h, hh, hpos⟩ := ((eventually_upperDensity_bad_le hMR hSmooth hε hη).and

@@ -38,4 +38,20 @@ def SmoothMeanInput : Prop :=
   ∀ β : ℝ, 0 < β → β < 1 → ∃ r : ℝ, r < 1 ∧
     Tendsto (fun X : ℕ => blockMean (smoothIndicator ((X : ℝ) ^ β)) X) atTop (𝓝 r)
 
+/-- Upper-bound form of the smooth-number input: for each fixed `0 < β < 1` the block mean
+of the `X^β`-smooth indicator over `[X, 2X)` is eventually at most some constant `c < 1`.
+
+This is all the deduction uses. It is weaker than `SmoothMeanInput` (no limit is required)
+and is proved unconditionally in `Erdos1201.SmoothBound` from Chebyshev-type prime bounds. -/
+def SmoothUpperInput : Prop :=
+  ∀ β : ℝ, 0 < β → β < 1 → ∃ c : ℝ, c < 1 ∧
+    ∀ᶠ X : ℕ in atTop, blockMean (smoothIndicator ((X : ℝ) ^ β)) X ≤ c
+
+/-- A limiting mean strictly below one gives an eventual upper bound strictly below one. -/
+theorem SmoothMeanInput.to_smoothUpperInput (H : SmoothMeanInput) : SmoothUpperInput := by
+  intro β hβ0 hβ1
+  obtain ⟨r, hr, hlim⟩ := H β hβ0 hβ1
+  refine ⟨(r + 1) / 2, by linarith, ?_⟩
+  exact (hlim.eventually (gt_mem_nhds (by linarith : r < (r + 1) / 2))).mono fun _ h => h.le
+
 end Erdos1201

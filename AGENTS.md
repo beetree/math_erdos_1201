@@ -29,10 +29,12 @@ to Przemek Chojecki together with ChatGPT 5.5 must remain.
 
 ## Concurrency, Worker Roles, and Swarm Orchestration
 
-- **Worker pool**: Up to 10 concurrent Gemini workers (`gemini-3.8-flash-high`), explicitly
-  requested by the user.
+- **Worker pool**: Up to 10 concurrent Gemini workers, explicitly requested by the user.
+  Preferred model: `gemini-3.8-flash-max`; if the installed `agy` does not offer it
+  (agy 1.1.27 lists `gemini-3.8-flash-high` as the top Gemini 3.8 tier), use
+  `gemini-3.8-flash-high`.
 - **Role separation**:
-  - Use `agy` with model `gemini-3.8-flash-high` for all heavy Lean implementation,
+  - Use `agy` with the model above for all heavy Lean implementation,
     routine proof repairs, error resolution, and compilation iterations.
   - The primary agent focuses on orchestration, dependency scheduling, queue management,
     and very selective blocker assistance on the hardest mathematical issues.
@@ -53,24 +55,28 @@ to Przemek Chojecki together with ChatGPT 5.5 must remain.
 
 - **No axioms, no sorry**: Never introduce `sorry`, `admit`, new Lean `axiom` declarations,
   or unchecked proof substitutes.
-- **Explicit analytic hypotheses**: The two external analytic inputs from the paper:
+- **Single explicit analytic hypothesis**: Exactly one external analytic input remains:
   1. The quantitative Matomäki–Radziwiłł short-interval theorem (`QuantitativeShortIntervalInput`,
      which implies `ShortIntervalInput`).
-  2. The Dickman–de Bruijn smooth-number asymptotic (`SmoothCountingInput`, which implies
-     `SmoothMeanInput`).
-  These are NOT formalized in Lean. They MUST remain explicit theorem parameters (`Prop`
-  hypotheses) rather than added Lean axioms.
+  This is NOT formalized in Lean and MUST remain an explicit theorem parameter (`Prop`
+  hypothesis) rather than an added Lean axiom.
+- **Smooth-number input proved**: The paper's smooth-number analytic input is proved
+  unconditionally rather than assumed. The modules `Erdos1201/PrimeSums.lean` (prime reciprocal sum
+  lower bounds via Chebyshev estimates), `Erdos1201/SmoothBound.lean` (multiples-of-large-primes
+  block-mean bound), and `Erdos1201/SmoothInput.lean` combine to prove `smoothUpperInput : SmoothUpperInput`.
+  The original Dickman-based formulations (`SmoothCountingInput`, `SmoothMeanInput` in
+  `Erdos1201/SmoothAsymptotics.lean`) are retained for reference but are no longer needed on the main path.
 - **Conditional nature**: Results are conditional deductions: a clean build verifies the
-  implication from the analytic hypotheses to the Erdős problem conclusions, NOT an
+  implication from `QuantitativeShortIntervalInput` to the Erdős problem conclusions, NOT an
   unconditional proof of Erdős Problem #1201.
 - **Expected final wrappers**:
   - `Erdos1201.theorem1`
   - `Erdos1201.erdos_problem_1201`
-  Both take `QuantitativeShortIntervalInput` and `SmoothCountingInput` as explicit hypotheses.
+  Both take only `QuantitativeShortIntervalInput` as an explicit hypothesis.
 
 ## Mathematical Conventions
 
-- **Block length and problem parameter**: The consecutive product $\prod_{j=1}^h (n+j)$ has
+- **Block length and problem parameter**: The consecutive product $\prod_{j=0}^{h-1} (n+j) = n(n+1)\dotsm(n+h-1)$ has
   $h$ factors, corresponding to the paper's $k = h - 1$ consecutive integers.
 - **Positive integer domain**: Counting is performed on positive integers $n \ge 1$;
   zero is excluded from both the good and bad sets. Largest prime factors satisfy

@@ -4,6 +4,11 @@ defaultTargets = ["Erdos1201"]
 
 [leanOptions]
 autoImplicit = false
+relaxedAutoImplicit = false
+maxSynthPendingDepth = 3
+# Vendored modules (Erdos1201/Vendor) trip these style linters; keep the default build quiet.
+weak.linter.style.nameCheck = false
+weak.linter.unnecessarySimpa = false
 
 [[require]]
 name = "mathlib"
