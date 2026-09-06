@@ -8,7 +8,13 @@ autoImplicit = false
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4.git"
-rev = "85e3a25e006c35636f0e53b0e9296caca2685bc0"
+rev = "v4.33.0"
+
+[[require]]
+name = "lean-proofs-latest"
+git = "https://github.com/plby/lean-proofs.git"
+rev = "f06c4076c5352252d1dbab91ae3afa28037f466c"
+subDir = "src/latest"
 
 [[lean_lib]]
 name = "Erdos1201"
