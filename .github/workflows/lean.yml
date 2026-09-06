@@ -1,0 +1,49 @@
+# Attribution Notice:
+# The original paper and mathematical proof are by Przemek Chojecki together with ChatGPT 5.5.
+# This repository formalizes their mathematical deduction in Lean 4.
+#
+# Analytic Trust Boundary:
+# Successful verification of this Lean 4 project demonstrates the conditional
+# deduction of Erdős Problem #1201 from explicit external analytic hypotheses
+# (QuantitativeShortIntervalInput and SmoothCountingInput).
+# Passing CI verifies the formal proof in Lean; it does not prove or formalize
+# the underlying external analytic hypotheses themselves.
+
+name: Lean CI
+
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Lean Project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install elan (Lean version manager)
+        run: |
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Verify toolchain
+        run: |
+          elan --version
+          lean --version
+          lake --version
+
+      - name: Fetch Mathlib cache
+        run: lake exe cache get
+
+      - name: Build Lean project
+        run: lake build
+
+      - name: Axiom audit
+        run: lake env lean Erdos1201/Audit.lean
