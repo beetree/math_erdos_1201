@@ -17,9 +17,10 @@ import Erdos1201.MR.Prop1.RangeInstance
 import Erdos1201.MR.Vinogradov.ZeroFreeInstance
 import Erdos1201.MR.Analysis.MeanValueTheorem
 import Erdos1201.MR.Decomposition.Lemma12
+import Erdos1201.MR.FrequencyIntegral
 
 open scoped BigOperators Real Topology ComplexInnerProductSpace
-open Filter Finset MeasureTheory intervalIntegral
+open Filter Finset MeasureTheory intervalIntegral Asymptotics
 open Erdos1201
 open Classical
 
@@ -626,4 +627,348 @@ theorem intervalCount_le_variance_bound (β : ℝ) (X h₁ h₂ M : ℕ) (δ T�
     div_le_div_of_nonneg_right hC (le_of_lt h_den_pos)
   linarith [h_int_bound, h_div_le]
 
+/-! ### Asymptotic Helpers and Final Assembly -/
+
+lemma eventually_log_rpow_neg_le {y : ℝ} (hy : 0 < y) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ X : ℕ in atTop, (Real.log (X : ℝ)) ^ (-y) ≤ c := by
+  have h_log : Tendsto (fun X : ℕ => Real.log (X : ℝ)) atTop atTop :=
+    Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  have h_comp : Tendsto (fun X : ℕ => (Real.log (X : ℝ)) ^ (-y)) atTop (𝓝 0) :=
+    (tendsto_rpow_neg_atTop hy).comp h_log
+  exact h_comp.eventually_le_const hc
+
+lemma eventually_const_div_log_rpow_le (C : ℝ) {y : ℝ} (hy : 0 < y) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ X : ℕ in atTop, C / (Real.log (X : ℝ)) ^ y ≤ c := by
+  have h_pos : 0 < c / (|C| + 1) := div_pos hc (by positivity)
+  have h_log : Tendsto (fun X : ℕ => Real.log (X : ℝ)) atTop atTop :=
+    Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  have h_comp : Tendsto (fun X : ℕ => (Real.log (X : ℝ)) ^ (-y)) atTop (𝓝 0) :=
+    (tendsto_rpow_neg_atTop hy).comp h_log
+  have h_ev := h_comp.eventually_le_const h_pos
+  filter_upwards [h_ev, eventually_ge_atTop 2] with X hX hX2
+  have hX_pos : 0 < (X : ℝ) := by exact_mod_cast (by omega : 0 < X)
+  have hlog_pos : 0 < Real.log (X : ℝ) := Real.log_pos (by exact_mod_cast (by omega : 1 < X))
+  have hrpow_neg : (Real.log (X : ℝ)) ^ (-y) = 1 / (Real.log (X : ℝ)) ^ y := by
+    rw [Real.rpow_neg hlog_pos.le, one_div]
+  rw [hrpow_neg] at hX
+  have hC_le : C ≤ |C| + 1 := by linarith [le_abs_self C]
+  have h_div_pos : 0 < (Real.log (X : ℝ)) ^ y := Real.rpow_pos_of_pos hlog_pos y
+  have : C / (Real.log (X : ℝ)) ^ y ≤ (|C| + 1) / (Real.log (X : ℝ)) ^ y :=
+    div_le_div_of_nonneg_right hC_le h_div_pos.le
+  refine this.trans ?_
+  have : (|C| + 1) / (Real.log (X : ℝ)) ^ y = (|C| + 1) * (1 / (Real.log (X : ℝ)) ^ y) := by ring
+  rw [this]
+  have h_mul := mul_le_mul_of_nonneg_left hX (by positivity : 0 ≤ |C| + 1)
+  refine h_mul.trans_eq ?_
+  have : 0 < |C| + 1 := by positivity
+  exact mul_div_cancel₀ _ this.ne'
+
+lemma eventually_log_rpow_div_le (r : ℝ) {s : ℝ} (hs : 0 < s) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ X : ℕ in atTop, (Real.log (X : ℝ)) ^ r / (X : ℝ) ^ s ≤ c := by
+  have h_comp : Tendsto (fun x : ℝ => (Real.log x) ^ r / x ^ s) atTop (𝓝 0) :=
+    (isLittleO_log_rpow_rpow_atTop r hs).tendsto_div_nhds_zero
+  have h_nat : Tendsto (fun X : ℕ => (Real.log (X : ℝ)) ^ r / (X : ℝ) ^ s) atTop (𝓝 0) :=
+    h_comp.comp tendsto_natCast_atTop_atTop
+  exact h_nat.eventually_le_const hc
+
+lemma div_rpow_pow_four_sub_two_fifths (x : ℝ) (hx : 0 < x) :
+    x ^ (4 / 15 : ℝ) * (2 / x ^ (1 / 5 : ℝ)) ^ 2 = 4 / x ^ (2 / 15 : ℝ) := by
+  have : (2 / x ^ (1 / 5 : ℝ)) ^ 2 = 4 / (x ^ (1 / 5 : ℝ)) ^ 2 := by ring
+  rw [this]
+  have h_sq : (x ^ (1 / 5 : ℝ)) ^ 2 = x ^ (2 / 5 : ℝ) := by
+    have : (2 : ℝ) = ((2 : ℕ) : ℝ) := by norm_num
+    rw [this, ← Real.rpow_natCast, ← Real.rpow_mul hx.le]
+    congr 1; ring
+  rw [h_sq]
+  have : x ^ (4 / 15 : ℝ) * (4 / x ^ (2 / 5 : ℝ)) = 4 * (x ^ (4 / 15 : ℝ) / x ^ (2 / 5 : ℝ)) := by ring
+  rw [this]
+  have h_sub : x ^ (4 / 15 : ℝ) / x ^ (2 / 5 : ℝ) = x ^ ((4 / 15 : ℝ) - 2 / 5) := by
+    rw [← Real.rpow_sub hx]
+  rw [h_sub]
+  have h_diff : (4 / 15 : ℝ) - 2 / 5 = -(2 / 15 : ℝ) := by ring
+  rw [h_diff, Real.rpow_neg hx.le]
+  exact div_eq_mul_inv 4 (x ^ (2 / 15 : ℝ)) ▸ rfl
+
+lemma eventually_T0_pow_four_mul_h2_div_X_sq_le {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ X : ℕ in atTop,
+      let T₀ := (Real.log (X : ℝ)) ^ (1 / 15 : ℝ)
+      let h₂ := ⌈(X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)⌉₊
+      T₀ ^ 4 * ((h₂ : ℝ) / (X : ℝ)) ^ 2 ≤ ε := by
+  have h_div1 : ∀ᶠ X : ℕ in atTop, (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) / (X : ℝ) ≤ 1 := by
+    have h_ev := eventually_log_rpow_div_le (1 / 5 : ℝ) (by norm_num : (0 : ℝ) < 1) (by norm_num : (0 : ℝ) < 1)
+    filter_upwards [h_ev] with X hX
+    rw [Real.rpow_one] at hX
+    exact hX
+  have h_ev_eps := eventually_const_div_log_rpow_le 4 (by norm_num : (0 : ℝ) < 2 / 15) hε
+  filter_upwards [h_div1, h_ev_eps, eventually_ge_atTop 16] with X h_div1_le h_eps hX16
+  dsimp
+  have hX_pos : 0 < (X : ℝ) := by exact_mod_cast (by omega : 0 < X)
+  have hlog_gt1 : 1 < Real.log (X : ℝ) := by
+    have h16 : (16 : ℝ) ≤ (X : ℝ) := by exact_mod_cast hX16
+    have : (1 : ℝ) < Real.log 16 := by
+      have : Real.log 16 = 4 * Real.log 2 := by
+        have : (16 : ℝ) = (2 : ℝ) ^ 4 := by norm_num
+        rw [this, Real.log_pow (2 : ℝ) 4]; ring
+      linarith [Real.log_two_gt_d9]
+    exact this.trans_le (Real.log_le_log (by norm_num) h16)
+  have hlog_pos : 0 < Real.log (X : ℝ) := by linarith
+  have hrpow_pos : 0 < (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) := Real.rpow_pos_of_pos hlog_pos _
+  set Y := (X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)
+  have hY_pos : 0 < Y := div_pos hX_pos hrpow_pos
+  have h1_le_Y : 1 ≤ Y := by
+    dsimp [Y]
+    rw [one_le_div₀ hrpow_pos]
+    exact (div_le_one₀ hX_pos).mp h_div1_le
+  set h₂ := ⌈Y⌉₊
+  have hh2_lt : (h₂ : ℝ) < Y + 1 := Nat.ceil_lt_add_one hY_pos.le
+  have hh2_le : (h₂ : ℝ) ≤ 2 * Y := by linarith
+  have hh2_div : (h₂ : ℝ) / (X : ℝ) ≤ 2 / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) := by
+    calc (h₂ : ℝ) / (X : ℝ) ≤ (2 * Y) / (X : ℝ) := div_le_div_of_nonneg_right hh2_le hX_pos.le
+      _ = (2 * ((X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ))) / (X : ℝ) := rfl
+      _ = 2 / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) := by field_simp
+  have h_div_nn : 0 ≤ (h₂ : ℝ) / (X : ℝ) := by positivity
+  have h_sq_le : ((h₂ : ℝ) / (X : ℝ)) ^ 2 ≤ (2 / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)) ^ 2 :=
+    sq_le_sq.mpr (by rw [abs_of_nonneg h_div_nn, abs_of_pos (by positivity)]; exact hh2_div)
+  have h_T0_four : ((Real.log (X : ℝ)) ^ (1 / 15 : ℝ)) ^ 4 = (Real.log (X : ℝ)) ^ (4 / 15 : ℝ) := by
+    have : (4 : ℝ) = ((4 : ℕ) : ℝ) := by norm_num
+    rw [this, ← Real.rpow_natCast, ← Real.rpow_mul hlog_pos.le]
+    congr 1; ring
+  have h_T0_nn : 0 ≤ ((Real.log (X : ℝ)) ^ (1 / 15 : ℝ)) ^ 4 := by positivity
+  calc ((Real.log (X : ℝ)) ^ (1 / 15 : ℝ)) ^ 4 * ((h₂ : ℝ) / (X : ℝ)) ^ 2
+    _ ≤ ((Real.log (X : ℝ)) ^ (1 / 15 : ℝ)) ^ 4 * (2 / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)) ^ 2 :=
+      mul_le_mul_of_nonneg_left h_sq_le h_T0_nn
+    _ = (Real.log (X : ℝ)) ^ (4 / 15 : ℝ) * (2 / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)) ^ 2 := by rw [h_T0_four]
+    _ = 4 / (Real.log (X : ℝ)) ^ (2 / 15 : ℝ) := div_rpow_pow_four_sub_two_fifths (Real.log (X : ℝ)) hlog_pos
+    _ ≤ ε := h_eps
+
+lemma eventually_h2_bounds (h : ℕ) (hh : 1 ≤ h) {η' : ℝ} (hη' : 0 < η') :
+    ∀ᶠ X : ℕ in atTop,
+      let h₂ := ⌈(X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)⌉₊
+      h ≤ h₂ ∧ (h₂ : ℝ) ≤ (X : ℝ) / 8 ∧ (h₂ : ℝ) ≤ η' * (X : ℝ) / 2 := by
+  have hh_pos : 0 < (h : ℝ) := by exact_mod_cast hh
+  have h_inv_h_pos : 0 < 1 / (h : ℝ) := by positivity
+  have h_div_h := eventually_log_rpow_div_le (1 / 5 : ℝ) (by norm_num : (0 : ℝ) < 1) h_inv_h_pos
+  have h_div1 : ∀ᶠ X : ℕ in atTop, (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) / (X : ℝ) ≤ 1 := by
+    have h_ev := eventually_log_rpow_div_le (1 / 5 : ℝ) (by norm_num : (0 : ℝ) < 1) (by norm_num : (0 : ℝ) < 1)
+    filter_upwards [h_ev] with X hX
+    rw [Real.rpow_one] at hX
+    exact hX
+  have h_eight := eventually_const_div_log_rpow_le 2 (by norm_num : (0 : ℝ) < 1 / 5) (by norm_num : (0 : ℝ) < 1 / 8)
+  have h_eta := eventually_const_div_log_rpow_le 2 (by norm_num : (0 : ℝ) < 1 / 5) (by positivity : (0 : ℝ) < η' / 2)
+  filter_upwards [h_div_h, h_div1, h_eight, h_eta, eventually_ge_atTop 16] with X h_dh h_div1_le h8 heta hX16
+  dsimp
+  have hX_pos : 0 < (X : ℝ) := by exact_mod_cast (by omega : 0 < X)
+  have hlog_gt1 : 1 < Real.log (X : ℝ) := by
+    have h16 : (16 : ℝ) ≤ (X : ℝ) := by exact_mod_cast hX16
+    have : (1 : ℝ) < Real.log 16 := by
+      have : Real.log 16 = 4 * Real.log 2 := by
+        have : (16 : ℝ) = (2 : ℝ) ^ 4 := by norm_num
+        rw [this, Real.log_pow (2 : ℝ) 4]; ring
+      linarith [Real.log_two_gt_d9]
+    exact this.trans_le (Real.log_le_log (by norm_num) h16)
+  have hlog_pos : 0 < Real.log (X : ℝ) := by linarith
+  have hrpow_pos : 0 < (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) := Real.rpow_pos_of_pos hlog_pos _
+  set Y := (X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)
+  have hY_pos : 0 < Y := div_pos hX_pos hrpow_pos
+  have h1_le_Y : 1 ≤ Y := by
+    dsimp [Y]
+    rw [one_le_div₀ hrpow_pos]
+    exact (div_le_one₀ hX_pos).mp h_div1_le
+  set h₂ := ⌈Y⌉₊
+  have hh2_lt : (h₂ : ℝ) < Y + 1 := Nat.ceil_lt_add_one hY_pos.le
+  have hh2_le : (h₂ : ℝ) ≤ 2 * Y := by linarith
+  have hh2_div : (h₂ : ℝ) / (X : ℝ) ≤ 2 / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) := by
+    calc (h₂ : ℝ) / (X : ℝ) ≤ (2 * Y) / (X : ℝ) := div_le_div_of_nonneg_right hh2_le hX_pos.le
+      _ = (2 * ((X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ))) / (X : ℝ) := rfl
+      _ = 2 / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) := by field_simp
+  have h_h_le_Y : (h : ℝ) ≤ Y := by
+    dsimp [Y]
+    rw [Real.rpow_one] at h_dh
+    rw [div_le_iff₀ hX_pos] at h_dh
+    rw [le_div_iff₀ hrpow_pos]
+    have : (h : ℝ) * (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) ≤ (h : ℝ) * ((1 / (h : ℝ)) * (X : ℝ)) :=
+      mul_le_mul_of_nonneg_left h_dh hh_pos.le
+    rw [← mul_assoc, mul_one_div_cancel hh_pos.ne', one_mul] at this
+    exact this
+  have h_h_le_h2 : h ≤ h₂ := by
+    have : (h : ℝ) ≤ (h₂ : ℝ) := h_h_le_Y.trans (Nat.le_ceil Y)
+    exact_mod_cast this
+  have h_h2_le_8 : (h₂ : ℝ) ≤ (X : ℝ) / 8 := by
+    calc (h₂ : ℝ) = (h₂ : ℝ) / (X : ℝ) * (X : ℝ) := (div_mul_cancel₀ _ hX_pos.ne').symm
+      _ ≤ (1 / 8) * (X : ℝ) := mul_le_mul_of_nonneg_right (hh2_div.trans h8) hX_pos.le
+      _ = (X : ℝ) / 8 := by ring
+  have h_h2_le_eta : (h₂ : ℝ) ≤ η' * (X : ℝ) / 2 := by
+    calc (h₂ : ℝ) = (h₂ : ℝ) / (X : ℝ) * (X : ℝ) := (div_mul_cancel₀ _ hX_pos.ne').symm
+      _ ≤ (η' / 2) * (X : ℝ) := mul_le_mul_of_nonneg_right (hh2_div.trans heta) hX_pos.le
+      _ = η' * (X : ℝ) / 2 := by ring
+  exact ⟨h_h_le_h2, h_h2_le_8, h_h2_le_eta⟩
+
+lemma one_div_le_of_ceil_le {h : ℕ} {ε : ℝ} (hε : 0 < ε) (h_ceil : ⌈1 / ε⌉₊ ≤ h) :
+    1 / (h : ℝ) ≤ ε := by
+  have h_le : 1 / ε ≤ (h : ℝ) := (Nat.le_ceil (1 / ε)).trans (by exact_mod_cast h_ceil)
+  have hh_pos : 0 < (h : ℝ) := lt_of_lt_of_le (by positivity) h_le
+  rw [div_le_iff₀ hh_pos]
+  rw [div_le_iff₀ hε] at h_le
+  linarith
+
+lemma one_div_sq_le_of_one_div_le {h : ℕ} (hh1 : 1 ≤ h) {ε : ℝ} (hε : 0 < ε) (h_div : 1 / (h : ℝ) ≤ ε) :
+    1 / (h : ℝ) ^ 2 ≤ ε := by
+  have hh_pos : 0 < (h : ℝ) := by exact_mod_cast hh1
+  have h1 : 1 / (h : ℝ) ^ 2 = (1 / (h : ℝ)) * (1 / (h : ℝ)) := by ring
+  rw [h1]
+  have h2 : 1 / (h : ℝ) ≤ 1 := by
+    rw [div_le_iff₀ hh_pos]
+    have : (1 : ℝ) ≤ (h : ℝ) := by exact_mod_cast hh1
+    linarith
+  have h_nn : 0 ≤ 1 / (h : ℝ) := by positivity
+  calc (1 / (h : ℝ)) * (1 / (h : ℝ)) ≤ ε * (1 / (h : ℝ)) := mul_le_mul_of_nonneg_right h_div h_nn
+    _ ≤ ε * 1 := mul_le_mul_of_nonneg_left h2 hε.le
+    _ = ε := mul_one ε
+
+lemma variance_bound_le_eta_div_two (C₁₄ C_W δ η' X : ℝ)
+    (hC₁₄ : 0 < C₁₄) (hC_W : 0 < C_W) (hδ : 0 < δ) (hη' : 0 < η') (hX : 0 ≤ X) :
+    let ε := (δ ^ 2 * η') / (10000 * (C_W + 1) * (C₁₄ + 1))
+    (C₁₄ * X * (ε + C_W * (4 * ε))) / (δ / 2) ^ 2 ≤ η' * X / 2 := by
+  intro ε
+  have hδ2 : 0 < δ ^ 2 := sq_pos_of_pos hδ
+  have h_div4 : (δ / 2) ^ 2 = δ ^ 2 / 4 := by ring
+  rw [h_div4]
+  have h_eps_nn : 0 ≤ ε := by
+    dsimp [ε]
+    positivity
+  have h_comb : ε + C_W * (4 * ε) ≤ 4 * (C_W + 1) * ε := by
+    calc ε + C_W * (4 * ε) ≤ 4 * ε + 4 * C_W * ε := by linarith [hC_W, h_eps_nn]
+      _ = 4 * (C_W + 1) * ε := by ring
+  have h_num_le : C₁₄ * X * (ε + C_W * (4 * ε)) ≤ C₁₄ * X * (4 * (C_W + 1) * ε) := by
+    have : 0 ≤ C₁₄ * X := by positivity
+    exact mul_le_mul_of_nonneg_left h_comb this
+  have h_frac_le : (C₁₄ * X * (ε + C_W * (4 * ε))) / (δ ^ 2 / 4) ≤
+      (C₁₄ * X * (4 * (C_W + 1) * ε)) / (δ ^ 2 / 4) :=
+    div_le_div_of_nonneg_right h_num_le (by positivity)
+  refine h_frac_le.trans ?_
+  have h_rw : (C₁₄ * X * (4 * (C_W + 1) * ε)) / (δ ^ 2 / 4) =
+      (16 * C₁₄ * (C_W + 1) * X * ε) / δ ^ 2 := by
+    have : (C₁₄ * X * (4 * (C_W + 1) * ε)) / (δ ^ 2 / 4) =
+        4 * (C₁₄ * X * (4 * (C_W + 1) * ε)) / δ ^ 2 := by ring
+    rw [this]
+    ring
+  rw [h_rw]
+  have h_eps_sub : (16 * C₁₄ * (C_W + 1) * X * ((δ ^ 2 * η') / (10000 * (C_W + 1) * (C₁₄ + 1)))) / δ ^ 2 =
+      (16 / 10000) * (C₁₄ / (C₁₄ + 1)) * (η' * X) := by
+    have hCW1 : C_W + 1 ≠ 0 := by linarith
+    have hC141 : C₁₄ + 1 ≠ 0 := by linarith
+    have hδ2_ne : δ ^ 2 ≠ 0 := hδ2.ne'
+    field_simp
+  have h_eps_eq : ε = (δ ^ 2 * η') / (10000 * (C_W + 1) * (C₁₄ + 1)) := rfl
+  rw [h_eps_eq, h_eps_sub]
+  have h_ratio : C₁₄ / (C₁₄ + 1) ≤ 1 := by
+    rw [div_le_one₀ (by linarith)]
+    linarith
+  have h_prod_nonneg : 0 ≤ η' * X := mul_nonneg hη'.le hX
+  have h1 : (16 / 10000 : ℝ) * (C₁₄ / (C₁₄ + 1)) * (η' * X) ≤ (16 / 10000) * 1 * (η' * X) := by
+    have : (16 / 10000 : ℝ) * (C₁₄ / (C₁₄ + 1)) ≤ (16 / 10000) * 1 :=
+      mul_le_mul_of_nonneg_left h_ratio (by norm_num)
+    exact mul_le_mul_of_nonneg_right this h_prod_nonneg
+  refine h1.trans ?_
+  have : (16 / 10000 : ℝ) * 1 * (η' * X) ≤ (1 / 2 : ℝ) * (η' * X) := by
+    have : (16 / 10000 : ℝ) * 1 ≤ (1 / 2 : ℝ) := by norm_num
+    exact mul_le_mul_of_nonneg_right this h_prod_nonneg
+  linarith
+
+/-- The final unconditionally established short-interval input for Erdős #1201. -/
+theorem smoothShortIntervalInput_holds : SmoothShortIntervalInput := by
+  intro β hβ hβ1 δ hδ η' hη'
+  let η_r : ℝ := 1 / 12
+  have hη_r0 : 0 < η_r := by norm_num
+  have hη_r : η_r < 1 / 6 := by norm_num
+  obtain ⟨c₀, K, hc₀, hK, hζ, hholo⟩ := vk_logDeriv_region
+  obtain ⟨C_W, hC_W_pos, hW⟩ := weighted_mean_sq_Fu_le c₀ K hc₀ hK hζ hholo hη_r0 hη_r
+  obtain ⟨C₁₄, hC₁₄_pos, h14⟩ := integral_variance_fX_le
+  obtain ⟨C_M, hC_M_pos, hCM⟩ := abs_intervalMean_sub_blockMean_le
+  let ε := (δ ^ 2 * η') / (10000 * (C_W + 1) * (C₁₄ + 1))
+  have hε : 0 < ε := by positivity
+  obtain ⟨h₀_sys, hsys⟩ := exists_rangeSystem hη_r0 hη_r ε hε
+  filter_upwards [eventually_ge_atTop h₀_sys, eventually_ge_atTop 1, eventually_ge_atTop ⌈1 / ε⌉₊] with h hh_sys hh1 hh_ceil
+  have h_inv_h_sq : 1 / (h : ℝ) ^ 2 ≤ ε :=
+    one_div_sq_le_of_one_div_le hh1 hε (one_div_le_of_ceil_le hε hh_ceil)
+  obtain ⟨X₀_sys, hXsys⟩ := hsys h hh_sys
+  have h_ev_h2 := eventually_h2_bounds h hh1 hη'
+  have h_ev_T0 := eventually_T0_pow_four_mul_h2_div_X_sq_le hε
+  have h_ev_B := eventually_log_rpow_neg_le (y := 1 / 400) (by norm_num) hε
+  have h_ev_CM := eventually_const_div_log_rpow_le C_M (y := 4 / 5) (by norm_num) (by linarith : (0 : ℝ) < δ / 4)
+  filter_upwards [eventually_ge_atTop X₀_sys, eventually_ge_atTop 16, h_ev_h2, h_ev_T0, h_ev_B, h_ev_CM] with X hX_sys hX16 hh2_bounds h_T0_term h_B_le h_CM_le
+  set h₂ := ⌈(X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ)⌉₊
+  set T₀ := (Real.log (X : ℝ)) ^ (1 / 15 : ℝ)
+  set M := 2 * X - h₂
+  have hh_le_h2 : h ≤ h₂ := hh2_bounds.1
+  have hh2_le_8 : (h₂ : ℝ) ≤ (X : ℝ) / 8 := hh2_bounds.2.1
+  have hh2_le_eta : (h₂ : ℝ) ≤ η' * (X : ℝ) / 2 := hh2_bounds.2.2
+  have hX_pos : 0 < (X : ℝ) := by exact_mod_cast (by omega : 0 < X)
+  have hh2_le_X : h₂ ≤ X := by
+    have : (h₂ : ℝ) ≤ (X : ℝ) := hh2_le_8.trans (by linarith)
+    exact_mod_cast this
+  have hXM : X ≤ M := by
+    dsimp [M]
+    omega
+  have hM_bound : M + h₂ ≤ 2 * X + 1 := by
+    dsimp [M]
+    omega
+  have h2XM_eq : 2 * X - M = h₂ := by
+    dsimp [M]
+    omega
+  have hy_lower : (X : ℝ) / (Real.log (X : ℝ)) ^ (1 / 5 : ℝ) ≤ (h₂ : ℝ) := Nat.le_ceil _
+  have h_approx : ∀ n ∈ Finset.Ioc X M,
+      |shortMean (smoothIndicator ((X : ℝ) ^ β)) h₂ n - blockMean (smoothIndicator ((X : ℝ) ^ β)) X| ≤ δ / 4 := by
+    intro n hn
+    rw [Finset.mem_Ioc] at hn
+    have hnX : X < n := hn.1
+    have hnM : n ≤ M := hn.2
+    have hn2X : n ≤ 2 * X + 1 := by omega
+    have h_med := shortMean_sub_blockMean_le_of_medium β X h₂ C_M hCM hβ hβ1 hX16 hy_lower hh2_le_X hnX hn2X
+    exact h_med.trans h_CM_le
+  have h_int_bound := intervalCount_le_variance_integral β X h h₂ M δ hδ hXM hh1 hh_le_h2 hM_bound h_approx
+  have hT0_ge1 : 1 ≤ T₀ := one_le_log_X_rpow_fifteen X hX16
+  have hh1_real : 1 ≤ (h : ℝ) := by exact_mod_cast hh1
+  have hh12_real : (h : ℝ) ≤ (h₂ : ℝ) := by exact_mod_cast hh_le_h2
+  have h_X1 : 1 ≤ X := by omega
+  have h14_bound := h14 β X (h : ℝ) (h₂ : ℝ) T₀ h_X1 hh1_real hh12_real hh2_le_8 hT0_ge1
+  have h_var_bound := intervalCount_le_variance_bound β X h h₂ M δ T₀ hδ h_int_bound C₁₄ h14_bound
+  obtain ⟨J, S, hJ, hQ0h, hQX, hQ4, hH, hP, hloglogQ, hQ_exp, hP_last, hA_le, hD_le⟩ := hXsys X hX_sys β hβ hβ1
+  have hh_le_X : (h : ℝ) ≤ (X : ℝ) := by
+    have : (h : ℝ) ≤ (h₂ : ℝ) := by exact_mod_cast hh_le_h2
+    refine this.trans (hh2_le_8.trans (by linarith))
+  have hW_bound := hW J S hJ β X (h : ℝ) hβ hβ1 hX16 hh1_real hQ0h hh_le_X hQX hQ4 hH hP hloglogQ hQ_exp hP_last
+  have h_sum_four : (Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ) / (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η_r) + (Real.log X) ^ (-(1 / 400 : ℝ))
+      + (∑ j : Fin J, (((j.val + 2 : ℕ) : ℝ) ^ 6 / Real.sqrt (S.P j) + Real.log (S.P j) / Real.log (S.Q j))) + 1 / (h : ℝ) ^ 2 ≤ 4 * ε := by
+    linarith [hA_le, h_B_le, hD_le, h_inv_h_sq]
+  have hW_le_four_eps : ∫ t in {t : ℝ | T₀ ≤ |t|}, ‖Fu β X ((1 : ℂ) + t * Complex.I)‖ ^ 2 * min 1 (((X : ℝ) / ((h : ℝ) * t)) ^ 2) ≤
+      C_W * (4 * ε) := by
+    refine hW_bound.trans ?_
+    exact mul_le_mul_of_nonneg_left h_sum_four hC_W_pos.le
+  have h_comb_le : T₀ ^ 4 * ((h₂ : ℝ) / (X : ℝ)) ^ 2 +
+      ∫ t in {t : ℝ | T₀ ≤ |t|}, ‖Fu β X ((1 : ℂ) + t * Complex.I)‖ ^ 2 * min 1 (((X : ℝ) / ((h : ℝ) * t)) ^ 2) ≤
+      ε + C_W * (4 * ε) :=
+    add_le_add h_T0_term hW_le_four_eps
+  have h_term1_le : (C₁₄ * (X : ℝ) * (T₀ ^ 4 * ((h₂ : ℝ) / (X : ℝ)) ^ 2 +
+      ∫ t in {t : ℝ | T₀ ≤ |t|}, ‖Fu β X ((1 : ℂ) + t * Complex.I)‖ ^ 2 * min 1 (((X : ℝ) / ((h : ℝ) * t)) ^ 2))) / (δ / 2) ^ 2 ≤
+      (C₁₄ * (X : ℝ) * (ε + C_W * (4 * ε))) / (δ / 2) ^ 2 := by
+    have h_num : C₁₄ * (X : ℝ) * (T₀ ^ 4 * ((h₂ : ℝ) / (X : ℝ)) ^ 2 +
+        ∫ t in {t : ℝ | T₀ ≤ |t|}, ‖Fu β X ((1 : ℂ) + t * Complex.I)‖ ^ 2 * min 1 (((X : ℝ) / ((h : ℝ) * t)) ^ 2)) ≤
+        C₁₄ * (X : ℝ) * (ε + C_W * (4 * ε)) :=
+      mul_le_mul_of_nonneg_left h_comb_le (by positivity)
+    exact div_le_div_of_nonneg_right h_num (by positivity)
+  have h_term1_final : (C₁₄ * (X : ℝ) * (T₀ ^ 4 * ((h₂ : ℝ) / (X : ℝ)) ^ 2 +
+      ∫ t in {t : ℝ | T₀ ≤ |t|}, ‖Fu β X ((1 : ℂ) + t * Complex.I)‖ ^ 2 * min 1 (((X : ℝ) / ((h : ℝ) * t)) ^ 2))) / (δ / 2) ^ 2 ≤
+      η' * (X : ℝ) / 2 :=
+    h_term1_le.trans (variance_bound_le_eta_div_two C₁₄ C_W δ η' (X : ℝ) hC₁₄_pos hC_W_pos hδ hη' hX_pos.le)
+  have h_term2_final : (2 * X - M : ℕ) ≤ η' * (X : ℝ) / 2 := by
+    rw [h2XM_eq]
+    exact hh2_le_eta
+  refine h_var_bound.trans ?_
+  linarith
+
 end Erdos1201.MR
+
+theorem _root_.Erdos1201.smoothShortIntervalInput_holds : SmoothShortIntervalInput :=
+  Erdos1201.MR.smoothShortIntervalInput_holds
+
