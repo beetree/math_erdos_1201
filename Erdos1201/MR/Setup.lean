@@ -38,7 +38,7 @@ noncomputable def coeffF (β : ℝ) (J : ℕ) (R : Fin J → Finset ℕ) (X : �
 noncomputable def F (β : ℝ) (J : ℕ) (R : Fin J → Finset ℕ) (X : ℕ) (s : ℂ) : ℂ := dirichletPoly (coeffF β J R X) (Finset.Ioc X (2 * X)) s
 
 /-- Short prime range [e^{v/H}, e^{(v+1)/H}] intersected with [P, Q]. -/
-noncomputable def shortPrimeRange (P Q : ℕ) (H : ℝ) (v : ℕ) : Finset ℕ := (primeRange P Q).filter (fun p => Real.exp (v / H) ≤ p ∧ (p : ℝ) ≤ Real.exp ((v + 1) / H))
+noncomputable def shortPrimeRange (P Q : ℕ) (H : ℝ) (v : ℕ) : Finset ℕ := (primeRange P Q).filter (fun p => Real.exp (v / H) ≤ p ∧ (p : ℝ) < Real.exp ((v + 1) / H))
 
 /-- Q_{v,H}(s) = ∑_{p in the short range} f_X(p) p^{-s}. -/
 noncomputable def Qpoly (β : ℝ) (X P Q : ℕ) (H : ℝ) (v : ℕ) (s : ℂ) : ℂ := dirichletPoly (fX β X) (shortPrimeRange P Q H v) s
@@ -91,7 +91,7 @@ theorem norm_coeffF_le_one (β : ℝ) (J : ℕ) (R : Fin J → Finset ℕ) (X n 
 
 /-- Characterization of membership in `shortPrimeRange P Q H v`. -/
 theorem mem_shortPrimeRange (P Q : ℕ) (H : ℝ) (v p : ℕ) :
-    p ∈ shortPrimeRange P Q H v ↔ (p.Prime ∧ P ≤ p ∧ p ≤ Q) ∧ Real.exp (v / H) ≤ p ∧ (p : ℝ) ≤ Real.exp ((v + 1) / H) := by
+    p ∈ shortPrimeRange P Q H v ↔ (p.Prime ∧ P ≤ p ∧ p ≤ Q) ∧ Real.exp (v / H) ≤ p ∧ (p : ℝ) < Real.exp ((v + 1) / H) := by
   unfold shortPrimeRange primeRange
   rw [Finset.mem_filter, Finset.mem_filter, Finset.mem_Icc]
   tauto

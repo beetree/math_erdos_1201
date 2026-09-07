@@ -71,6 +71,33 @@ Hardy–Littlewood method*, Ch. 5; Ivić, *The Riemann zeta-function*, Ch. 6):
 - V5. Prime sums at large heights: `Σ_{p ~ P} p^{-it} ≪ P exp(−c (log P)^{1/3−ε})` for
   `|t| ≤ P^A`, via the vendored truncated Perron formula and the region V4.
 
+## Revised route for the smooth indicator (2026-09-06, evening)
+
+Only `f_X = smoothIndicator (X^β)`, `3/4 ≤ β < 1`, matters. Write `f_X = 1 − 1_{P⁺(n) > X^β}`;
+since `(X^β)^2 > 2X` every `n ≤ 2X` has at most one prime factor above `X^β`.
+
+- Halász's theorem (paper Lemmas 2–4) is NOT needed. The pointwise bounds on the
+  `R_{v,H}` polynomials in the U-part reduce, after the Ramaré identity on a large prime
+  factor and Rankin's bound for smooth numbers, to one analytic input:
+
+  (★) twisted prime sums: for `A ≥ exp((log X)^{3/4})`, `A < B ≤ 2A`, `1 ≤ |u| ≤ X^2`,
+      `∑_{A<p≤B} p^{-1-iu} = O(1/(|u| log A)) + O(exp(−(log X)^{1/20}))`.
+
+  (★) also gives Lemma 11 (Halász for primes) by the duality argument of the paper, with
+  the main terms `P/|t−t'|` summed over well-spaced points (a `log T` loss that the
+  parameters absorb). Lemma 9 (Halász–Montgomery for integers) is `HalaszMontgomery`.
+- (★) comes from the vendored smoothed-Chebyshev contour argument (`Vendor/.../PNT/MediumPNT.lean`)
+  re-run for `∑ Λ(n) n^{-iu} Smooth1(n/A)`: same contour, the Mellin factor evaluated at
+  `s − iu`, residue `A^{1−iu} 𝓜(Smooth1)(1−iu)`, and the ζ'/ζ bound in the
+  Vinogradov–Korobov region (width `c/((log t)^{2/3} log log t)`) in place of the
+  vendored `(log t)^{-9}` region.
+- Everything else follows the paper: Proposition 1 with the sets `T_j` (E_1, E_j bounds,
+  Lemma 12 = Boundary + Square + assembly, Lemma 13 moments, Lemma 8 large values), the
+  U-part with `T_S`/`T_L` and Lemma 11, Lemma 14 (Parseval; `WindowEnergy` gives the
+  exact two-window identity), the elementary Lipschitz step `MediumAverage`, the sieve
+  removal of `S`, and the Chebyshev-count reduction `ShortIntervalAssembly`
+  (`smoothShortIntervalInput_of_restricted_shortMeanEnergies`).
+
 ## Infrastructure
 
 - `Erdos1201/Vendor/`: 135 modules copied from solve-math (same toolchain and Mathlib),

@@ -14,6 +14,7 @@ import Erdos1201.MR.Analysis.WellSpaced
 import Erdos1201.MR.Analysis.WeylDifferencing
 import Erdos1201.MR.Arithmetic
 import Erdos1201.MR.Decomposition.Lemma12
+import Erdos1201.MR.Decomposition.Lemma12Boundary
 import Erdos1201.MR.Decomposition.Lemma12Square
 import Erdos1201.MR.Decomposition.MediumAverage
 import Erdos1201.MR.Exceptional
@@ -23,6 +24,7 @@ import Erdos1201.MR.Parseval.LowFrequency
 import Erdos1201.MR.Parseval.PlancherelL1L2
 import Erdos1201.MR.Parseval.SaffariVaughan
 import Erdos1201.MR.Parseval.WindowKernel
+import Erdos1201.MR.Parseval.WindowEnergy
 import Erdos1201.MR.Parseval.WindowTransform
 import Erdos1201.MR.Polynomials.DivisorMultiplicity
 import Erdos1201.MR.Polynomials.MomentComputation
@@ -32,6 +34,7 @@ import Erdos1201.MR.Prop1.Split
 import Erdos1201.MR.Ramare
 import Erdos1201.MR.Ranges
 import Erdos1201.MR.Setup
+import Erdos1201.MR.ShortIntervalAssembly
 import Erdos1201.MR.Sieve.InclusionExclusion
 import Erdos1201.MR.Sieve.RangeSieveUpper
 import Erdos1201.MR.Sieve.RangeSieveUpperHR
