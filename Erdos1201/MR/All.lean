@@ -79,6 +79,7 @@ import Erdos1201.MR.Twisted.TwistedBounds
 import Erdos1201.MR.Vinogradov.PrimeSelectionSq
 import Erdos1201.MR.Twisted.TwistedPrimeSums
 import Erdos1201.MR.Prop1.EjUnsifted
+import Erdos1201.MR.Vinogradov.BilinearEstimate
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules
