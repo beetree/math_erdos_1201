@@ -291,7 +291,7 @@ lemma zeta_analytic_on_closedBall_1 (c : ℂ) (hc : 1 < |c.im|) :
 lemma log_Deriv_Expansion_Zeta_general
     (r1 r R1 R : ℝ)
     (hr1_pos : 0 < r1) (hr1_lt_r : r1 < r)
-    (hr_pos : 0 < r) (hr_lt_R1 : r < R1) (hR1_pos : 0 < R1) (hR1_lt_R : R1 < R) (hR_lt_1 : R < 1)
+    (_hr_pos : 0 < r) (hr_lt_R1 : r < R1) (hR1_pos : 0 < R1) (hR1_lt_R : R1 < R) (hR_lt_1 : R < 1)
     (c : ℂ) (hc_re : 1 < c.re) (hc_im : 3 ≤ |c.im|)
     (B : ℝ) (hB : 1 < B) (h_bound : ∀ z ∈ closedBall c R, ‖riemannZeta z‖ < B)
     (hfin : (zerosetKfRc R1 c riemannZeta).Finite) :
@@ -330,6 +330,409 @@ lemma log_Deriv_Expansion_Zeta_general
     simpa [hsum_eq] using hineq1
   simpa [logDerivZeta] using hineq2
 
+
+lemma zeros_finite_general (c : ℂ) (R1 : ℝ) (hR1_pos : 0 < R1) (hR1_lt_1 : R1 < 1) (hc_re : 1 < c.re) :
+    (zerosetKfRc R1 c riemannZeta).Finite := by
+  let H : ℂ → ℂ := Function.update (fun s : ℂ => (s - 1) * riemannZeta s) 1 1
+  have hH_diff : Differentiable ℂ H := by
+    intro s
+    rcases eq_or_ne s 1 with rfl | hs
+    · refine (Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt ?_ ?_).differentiableAt
+      · filter_upwards [self_mem_nhdsWithin] with t ht
+        have hdiff : DifferentiableAt ℂ (fun u : ℂ => (u - 1) * riemannZeta u) t := by
+          have h1 : DifferentiableAt ℂ (fun u : ℂ => u - 1) t :=
+            (differentiableAt_id.sub_const 1)
+          have h2 : DifferentiableAt ℂ riemannZeta t :=
+            (differentiableAt_riemannZeta ht)
+          exact h1.mul h2
+        apply DifferentiableAt.congr_of_eventuallyEq hdiff
+        filter_upwards [eventually_ne_nhds ht] with u hu using by
+          simp [H, Function.update_of_ne hu]
+      · simpa [H, continuousAt_update_same] using riemannZeta_residue_one
+    · have hdiff : DifferentiableAt ℂ (fun u : ℂ => (u - 1) * riemannZeta u) s := by
+        have h1 : DifferentiableAt ℂ (fun u : ℂ => u - 1) s :=
+          (differentiableAt_id.sub_const 1)
+        have h2 : DifferentiableAt ℂ riemannZeta s :=
+          (differentiableAt_riemannZeta hs)
+        exact h1.mul h2
+      apply DifferentiableAt.congr_of_eventuallyEq hdiff
+      filter_upwards [eventually_ne_nhds hs] with u hu using by
+        simp [H, Function.update_of_ne hu]
+  have hH_ana : AnalyticOnNhd ℂ H Set.univ := (Complex.analyticOnNhd_univ_iff_differentiable).mpr hH_diff
+  let g : ℂ → ℂ := fun z => H (z + c)
+  have hg_diff : Differentiable ℂ g := hH_diff.comp (differentiable_id.add_const c)
+  have hg_ana : AnalyticOnNhd ℂ g (Metric.closedBall (0:ℂ) 1) :=
+    AnalyticOnNhd.mono ((Complex.analyticOnNhd_univ_iff_differentiable).mpr hg_diff) (by intro z hz; simp)
+  have hg_nonzero : ∃ z ∈ Metric.ball (0 : ℂ) 1, g z ≠ 0 := by
+    refine ⟨0, Metric.mem_ball.mpr (by norm_num), ?_⟩
+    have hc_ne : c ≠ 1 := by
+      intro hc
+      have : c.re = 1 := by rw [hc]; simp
+      linarith
+    have hζ_ne : riemannZeta c ≠ 0 := riemannZeta_ne_zero_of_one_lt_re hc_re
+    have : g 0 = H c := by simp [g]
+    have h_Hc : H c = (c - 1) * riemannZeta c := by simp [H, Function.update_of_ne hc_ne]
+    rw [this, h_Hc]
+    apply mul_ne_zero (sub_ne_zero.mpr hc_ne) hζ_ne
+  have h_fin_g := AnalyticZeroCounting.lem_Contra_finiteKR R1 hR1_pos hR1_lt_1 g hg_ana hg_nonzero
+  have h_subset : zerosetKfRc R1 c riemannZeta ⊆ (fun w => w + c) '' (zerosetKfR R1 hR1_pos g) := by
+    intro z hz
+    rcases hz with ⟨hzball, hzero⟩
+    refine ⟨z - c, ?_, by ring⟩
+    constructor
+    · simpa [Metric.mem_closedBall, Complex.dist_eq, sub_eq_add_neg] using hzball
+    · have hz_ne : z ≠ 1 := by
+        intro hz1
+        have hz1_ne : riemannZeta 1 ≠ 0 := riemannZeta_ne_zero_of_one_le_re (by norm_num)
+        rw [hz1] at hzero
+        exact hz1_ne hzero
+      have hg_eq : g (z - c) = (z - 1) * riemannZeta z := by
+        have hsum : z - c + c = z := by ring
+        have : g (z - c) = H z := by simp [g, hsum]
+        rw [this]
+        simp [H, hz_ne]
+      rw [hg_eq, hzero, mul_zero]
+  exact Set.Finite.subset (h_fin_g.image _) h_subset
+
+
+lemma re_one_div (z : ℂ) : (1 / z).re = z.re / (z.re^2 + z.im^2) := by
+  rw [one_div, Complex.inv_re, Complex.normSq_apply]
+  ring
+
+lemma neg_re_le_norm (z : ℂ) : -z.re ≤ norm z := by
+  have := Complex.re_le_norm (-z)
+  rwa [Complex.neg_re, norm_neg] at this
+
+lemma div_pow_two (x : ℝ) : x / x^2 = 1 / x := by
+  by_cases h : x = 0
+  · simp [h]
+  · rw [pow_two, ← div_div, div_self h, one_div]
+
+lemma abs_term_bound_general (p : Nat.Primes) (s : ℂ) :
+    norm (1 - ((p : ℕ) : ℂ) ^ (-s)) ≤ 1 + ((p : ℕ) : ℝ) ^ (-s.re) := by
+  let z : ℂ := ((p : ℕ) : ℂ) ^ (-s)
+  have h1 : norm (1 - z) ≤ 1 + norm z := by
+    simpa [sub_eq_add_neg, norm_neg] using (_root_.norm_add_le (1 : ℂ) (-z))
+  have h5 : norm (((p : ℕ) : ℂ) ^ (-s)) = ((p : ℕ) : ℝ) ^ (-s.re) := abs_p_pow_s p s
+  have h5z : norm z = ((p : ℕ) : ℝ) ^ (-s.re) := by simpa [z] using h5
+  rw [h5z] at h1
+  simpa [z] using h1
+
+lemma cond_general (p : Nat.Primes) (s : ℂ) (hs : 1 < s.re) : 1 - ((p : ℕ) : ℂ) ^ (-s) ≠ 0 := by
+  intro h
+  have hp_eq_one : ((p : ℕ) : ℂ) ^ (-s) = 1 := by
+    rw [sub_eq_zero] at h
+    exact h.symm
+  have h_abs_lt : norm (((p : ℕ) : ℂ) ^ (-s)) < 1 := p_s_abs_1 p s hs
+  rw [hp_eq_one] at h_abs_lt
+  have : norm (1 : ℂ) = 1 := by simp [norm]
+  rw [this] at h_abs_lt
+  exact lt_irrefl 1 h_abs_lt
+
+lemma abs_term_inv_bound_general (p : Nat.Primes) (s : ℂ) (hs : 1 < s.re) :
+    (1 + ((p : ℕ) : ℝ) ^ (-s.re))⁻¹ ≤ (norm (1 - ((p : ℕ) : ℂ) ^ (-s)))⁻¹ := by
+  have h1 := abs_term_bound_general p s
+  have h2 := cond_general p s hs
+  have h3 : 0 < norm (1 - ((p : ℕ) : ℂ) ^ (-s)) := norm_pos_iff.mpr h2
+  simpa only [one_div] using (_root_.one_div_le_one_div_of_le h3 h1)
+
+lemma abs_zeta_inequality_general (s : ℂ) (hs : 1 < s.re) :
+    ∏' p : Nat.Primes, (1 + ((p : ℕ) : ℝ) ^ (-s.re))⁻¹ ≤
+    norm (riemannZeta s) := by
+  have h_pos_left : ∀ p : Nat.Primes, 0 < (1 + ((p : ℕ) : ℝ) ^ (-s.re))⁻¹ := by
+    intro p
+    apply inv_pos.mpr
+    apply add_pos zero_lt_one
+    apply Real.rpow_pos_of_pos
+    exact_mod_cast (p.property.pos : 0 < (p : ℕ))
+  have h_pos_right : ∀ p : Nat.Primes, 0 < (norm (1 - ((p : ℕ) : ℂ) ^ (-s)))⁻¹ := by
+    intro p
+    apply inv_pos.mpr
+    rw [norm_pos_iff]
+    exact cond_general p s hs
+  have h_mult_left : Multipliable (fun p : Nat.Primes => (1 + ((p : ℕ) : ℝ) ^ (-s.re))⁻¹) :=
+    multipliable_positive_inv_powers (s.re) hs
+  have h_mult_right : Multipliable (fun p : Nat.Primes => (norm (1 - ((p : ℕ) : ℂ) ^ (-s)))⁻¹) := by
+    have h_euler := (zetaEulerprod s hs).1
+    have h_nonzero : ∀ p : Nat.Primes, 1 - ((p : ℕ) : ℂ) ^ (-s) ≠ 0 := fun p => cond_general p s hs
+    exact multipliable_complex_abs_inv (fun p : Nat.Primes => ((p : ℕ) : ℂ) ^ (-s)) h_euler h_nonzero
+  let f : Nat.Primes → NNReal := fun p => ⟨(1 + ((p : ℕ) : ℝ) ^ (-s.re))⁻¹, le_of_lt (h_pos_left p)⟩
+  let g : Nat.Primes → NNReal := fun p => ⟨(norm (1 - ((p : ℕ) : ℂ) ^ (-s)))⁻¹, le_of_lt (h_pos_right p)⟩
+  have hf : Multipliable f := multipliable_real_to_nnreal _ h_pos_left h_mult_left
+  have hg : Multipliable g := multipliable_real_to_nnreal _ h_pos_right h_mult_right
+  have h_pointwise : ∀ p : Nat.Primes, f p ≤ g p := by
+    intro p
+    simp only [f, g]
+    exact abs_term_inv_bound_general p s hs
+  have h_nnreal_ineq : ∏' p, f p ≤ ∏' p, g p := Multipliable.tprod_le_tprod h_pointwise hf hg
+  have h_convert : ∏' p, (f p : ℝ) ≤ ∏' p, (g p : ℝ) := nnreal_tprod_le_coe f g hf hg h_nnreal_ineq
+  have h_eq_f : ∏' p, (f p : ℝ) = ∏' p : Nat.Primes, (1 + ((p : ℕ) : ℝ) ^ (-s.re))⁻¹ := rfl
+  have h_eq_g : ∏' p, (g p : ℝ) = ∏' p : Nat.Primes, (norm (1 - ((p : ℕ) : ℂ) ^ (-s)))⁻¹ := rfl
+  rw [h_eq_f, h_eq_g] at h_convert
+  have h_zeta : ∏' p : Nat.Primes, (norm (1 - ((p : ℕ) : ℂ) ^ (-s)))⁻¹ = norm (riemannZeta s) := by
+    exact (abs_zeta_prod_prime s hs).symm
+  rw [h_zeta] at h_convert
+  exact h_convert
+
+lemma one_minus_le_inv_one_plus {x : ℝ} (_hx : 0 < x) (_hx1 : x < 1) :
+    1 - x ≤ (1 + x)⁻¹ := by
+  have h1 : 0 < 1 + x := by linarith
+  have h4 : 1 - x ≤ 1 / (1 + x) := by
+    rw [le_div_iff₀ h1]
+    nlinarith
+  simpa [one_div] using h4
+
+lemma p_s_real_lt_one (p : Nat.Primes) (s : ℂ) (hs : 1 < s.re) : ((p : ℕ) : ℝ) ^ (-s.re) < 1 := by
+  have hx : 1 < ((p : ℕ) : ℝ) := by exact_mod_cast (p.property.one_lt)
+  have hz : -s.re < 0 := by linarith
+  exact Real.rpow_lt_one_of_one_lt_of_neg hx hz
+
+lemma term_bound2 (p : Nat.Primes) (s : ℂ) (hs : 1 < s.re) :
+    1 - ((p : ℕ) : ℝ) ^ (-s.re) ≤ (1 + ((p : ℕ) : ℝ) ^ (-s.re))⁻¹ := by
+  have hx : 0 < ((p : ℕ) : ℝ) ^ (-s.re) := Real.rpow_pos_of_pos (by exact_mod_cast (p.property.pos)) _
+  have hx1 := p_s_real_lt_one p s hs
+  exact one_minus_le_inv_one_plus hx hx1
+
+lemma abs_zeta_ratio_eval_general (σ : ℝ) (hσ : 1 < σ) :
+    norm (riemannZeta (2 * σ : ℝ) / riemannZeta σ) = ∏' p : Nat.Primes, (1 + ((p : ℕ) : ℝ) ^ (-σ))⁻¹ := by
+  have hr : 1 < (((2 * σ : ℝ) / 2 : ℂ)).re := by
+    simp
+    linarith
+  have hratio := zeta_ratio_identity_ofReal_div_two (2 * σ) hr
+  have h_simp : ((2 * σ : ℝ) / 2 : ℝ) = σ := by ring
+  have h_cast : (((2 * σ : ℝ) / 2 : ℝ) : ℂ) = (σ : ℂ) := by rw [h_simp]
+  have h_cast2 : (((2 * σ : ℝ) / 2 : ℂ)) = (σ : ℂ) := by
+    apply Complex.ext <;> simp
+  rw [h_cast] at hratio
+  rw [h_cast2] at hratio
+  let w : Nat.Primes → ℂ := fun p => (1 + ((p : ℕ) : ℂ) ^ (-(σ : ℂ)))⁻¹
+  let u : Nat.Primes → ℝ := fun p => (1 + ((p : ℕ) : ℝ) ^ (-σ))⁻¹
+  have hu_mult : Multipliable u :=
+    multipliable_positive_inv_powers σ hσ
+  have hw_eq : w = fun p : Nat.Primes => (u p : ℂ) := by
+    funext p
+    have hx : 0 ≤ ((p : ℕ) : ℝ) := by exact_mod_cast (Nat.zero_le (p : ℕ))
+    have hcpow : (((((p : ℕ) : ℝ) ^ (-σ)) : ℝ) : ℂ)
+        = ((p : ℕ) : ℂ) ^ (-(σ : ℂ)) := by
+      simpa using (Complex.ofReal_cpow (x := ((p : ℕ) : ℝ)) (hx := hx) (y := -σ))
+    calc
+      w p = (1 + ((p : ℕ) : ℂ) ^ (-(σ : ℂ)))⁻¹ := rfl
+      _ = (1 + (((((p : ℕ) : ℝ) ^ (-σ)) : ℝ) : ℂ))⁻¹ := by
+        simp [hcpow]
+      _ = (((1 + ((p : ℕ) : ℝ) ^ (-σ))⁻¹ : ℝ) : ℂ) := by
+        simp [Complex.ofReal_add, Complex.ofReal_inv, Complex.ofReal_one]
+  have hw_mult : Multipliable w := by
+    have hmap : Multipliable ((fun x : ℝ => (x : ℂ)) ∘ u) :=
+      Multipliable.map (hf := hu_mult) Complex.ofRealHom Complex.continuous_ofReal
+    simpa [hw_eq, Function.comp_def] using hmap
+  have h_abs_tprod : norm (∏' p : Nat.Primes, w p) = ∏' p : Nat.Primes, norm (w p) :=
+    Multipliable.norm_tprod hw_mult
+  have h_abs_eq_fun : (fun p : Nat.Primes => norm (w p)) = u := by
+    funext p
+    have hge : 0 ≤ ((p : ℕ) : ℝ) ^ (-σ) :=
+      Real.rpow_nonneg (by exact_mod_cast (Nat.zero_le (p : ℕ))) _
+    have hpos : 0 < 1 + ((p : ℕ) : ℝ) ^ (-σ) := by linarith
+    have hnonneg : 0 ≤ u p := by
+      have : 0 < (1 + ((p : ℕ) : ℝ) ^ (-σ))⁻¹ := inv_pos.mpr hpos
+      exact this.le
+    simp [hw_eq, Complex.norm_real, abs_of_nonneg hnonneg]
+  have h_abs_ratio : norm (riemannZeta (2 * σ : ℝ) / riemannZeta σ)
+      = norm (∏' p : Nat.Primes, w p) := by
+    simpa [w] using congrArg norm hratio
+  calc
+    norm (riemannZeta (2 * σ : ℝ) / riemannZeta σ)
+        = norm (∏' p : Nat.Primes, w p) := h_abs_ratio
+    _ = ∏' p : Nat.Primes, norm (w p) := h_abs_tprod
+    _ = ∏' p : Nat.Primes, u p := by simp [h_abs_eq_fun]
+    _ = ∏' p : Nat.Primes, (1 + ((p : ℕ) : ℝ) ^ (-σ))⁻¹ := rfl
+
+/-- Explicit general lower bound on the norm of the Riemann zeta function for $\mathrm{Re}(s) > 1$. -/
+theorem zeta_lower_bound_general (σ t : ℝ) (hσ : 1 < σ) :
+    norm (riemannZeta (2 * σ : ℝ) / riemannZeta σ) ≤
+      norm (riemannZeta (σ + t * Complex.I)) := by
+  have hs : 1 < (σ + t * Complex.I).re := by
+    simp
+    exact hσ
+  calc
+    norm (riemannZeta (2 * σ : ℝ) / riemannZeta σ)
+        = ∏' p : Nat.Primes, (1 + ((p : ℕ) : ℝ) ^ (-σ))⁻¹ := abs_zeta_ratio_eval_general σ hσ
+    _ ≤ norm (riemannZeta (σ + t * Complex.I)) := by
+          have h_ineq := abs_zeta_inequality_general (σ + t * Complex.I) hs
+          have h_re : (σ + t * Complex.I).re = σ := by simp
+          rwa [h_re] at h_ineq
+
+/-- Strict upper bound on $\zeta(z)$ along the full geometric disk of radius $7\theta(t)/8$,
+using local regularity of $\theta$ and $\varphi$ at heights near $t$. -/
+lemma zeta_bound_on_disk_general (θ φ : ℝ → ℝ)
+    (hθ : ∀ t, 3 ≤ t → 0 < θ t ∧ θ t ≤ 1 / 2)
+    (hθloc : ∀ t t', 3 ≤ t → |t' - t| ≤ 1 → θ t / 2 ≤ θ t')
+    (hφloc : ∀ t t', 3 ≤ t → |t' - t| ≤ 1 → φ t' ≤ 2 * φ t)
+    (hζ : ∀ (σ t : ℝ), 3 ≤ |t| → 1 - θ |t| ≤ σ → σ ≤ 2 → ‖riemannZeta (σ + t * Complex.I)‖ ≤ Real.exp (φ |t|))
+    (t : ℝ) (ht : 6 ≤ t) (z : ℂ)
+    (hz : z ∈ Metric.closedBall ((1 + θ t / 2 : ℝ) + t * Complex.I) (7 * θ t / 8)) :
+    ‖riemannZeta z‖ < Real.exp (2 * φ t) + 1 := by
+  have ht3 : 3 ≤ t := by linarith
+  have hθt := hθ t ht3
+  set c : ℂ := (1 + θ t / 2 : ℝ) + t * Complex.I
+  have hz_dist : dist z c ≤ 7 * θ t / 8 := Metric.mem_closedBall.mp hz
+  have h_norm : ‖z - c‖ ≤ 7 * θ t / 8 := by
+    rw [dist_eq] at hz_dist
+    exact hz_dist
+  have h_im_dist : |z.im - t| ≤ 7 * θ t / 8 := by
+    have h1 : z.im - t = (z - c).im := by simp [c]
+    rw [h1]
+    exact Complex.abs_im_le_norm (z - c) |>.trans h_norm
+  have hR_le_half : 7 * θ t / 8 ≤ 7 / 16 := by linarith [hθt.2]
+  have hR_le_1 : 7 * θ t / 8 ≤ 1 := by linarith [hR_le_half]
+  have h_im_le_1 : |z.im - t| ≤ 1 := le_trans h_im_dist hR_le_1
+  have h_im_gt : 5 ≤ z.im := by
+    have : t - 7 * θ t / 8 ≤ z.im := by
+      have := (abs_le.mp h_im_dist).1
+      linarith
+    linarith [hR_le_half]
+  have h_abs_im : |z.im| = z.im := abs_of_pos (by linarith)
+  have h_abs_im_ge3 : 3 ≤ |z.im| := by
+    rw [h_abs_im]
+    linarith
+  have h_diff_abs : |abs z.im - t| ≤ 1 := by
+    rw [h_abs_im]
+    exact h_im_le_1
+  have hθ_near := hθloc t |z.im| ht3 h_diff_abs
+  have hφ_near := hφloc t |z.im| ht3 h_diff_abs
+  have h_re_dist : |z.re - (1 + θ t / 2)| ≤ 7 * θ t / 8 := by
+    have h1 : z.re - (1 + θ t / 2) = (z - c).re := by simp [c]
+    rw [h1]
+    exact Complex.abs_re_le_norm (z - c) |>.trans h_norm
+  have h_re_bounds := abs_le.mp h_re_dist
+  have hσ_ge : 1 - θ |z.im| ≤ z.re := by
+    have h1 : 1 - θ t / 2 ≤ z.re := by linarith [h_re_bounds.1]
+    have h2 : 1 - θ |z.im| ≤ 1 - θ t / 2 := by linarith [hθ_near]
+    linarith
+  have hσ_le : z.re ≤ 2 := by
+    have : z.re ≤ 1 + θ t / 2 + 7 * θ t / 8 := by linarith [h_re_bounds.2]
+    linarith [hθt.2]
+  have hz_eq : z = z.re + z.im * Complex.I := (Complex.re_add_im z).symm
+  have hζ_bound := hζ z.re z.im h_abs_im_ge3 hσ_ge hσ_le
+  rw [← hz_eq] at hζ_bound
+  have h_exp_le : Real.exp (φ |z.im|) ≤ Real.exp (2 * φ t) :=
+    Real.exp_le_exp.mpr hφ_near
+  have h_lt : Real.exp (2 * φ t) < Real.exp (2 * φ t) + 1 := lt_add_one _
+  exact lt_of_le_of_lt (le_trans hζ_bound h_exp_le) h_lt
+
+lemma re_div_zero_pos (z ρ : ℂ) (h : ρ.re < z.re) : 0 ≤ (1 / (z - ρ)).re := by
+  rw [re_one_div]
+  have hpos : 0 < (z - ρ).re := sub_pos.mpr (by simpa using h)
+  have hsq_pos : 0 < (z - ρ).re ^ 2 + (z - ρ).im ^ 2 := by
+    have : 0 < (z - ρ).re ^ 2 := sq_pos_of_ne_zero (ne_of_gt hpos)
+    have : 0 ≤ (z - ρ).im ^ 2 := sq_nonneg _
+    positivity
+  exact div_nonneg (le_of_lt hpos) (le_of_lt hsq_pos)
+
+lemma re_div_same_im (z ρ : ℂ) (hre : ρ.re < z.re) (him : z.im = ρ.im) :
+    (1 / (z - ρ)).re = 1 / (z.re - ρ.re) := by
+  rw [re_one_div]
+  have him_zero : (z - ρ).im = 0 := by simp [him]
+  have hre_eq : (z - ρ).re = z.re - ρ.re := by simp
+  have hne : z.re - ρ.re ≠ 0 := ne_of_gt (sub_pos.mpr hre)
+  rw [him_zero, hre_eq]
+  have : (z.re - ρ.re)^2 + (0:ℝ)^2 = (z.re - ρ.re)^2 := by ring
+  rw [this]
+  exact div_pow_two (z.re - ρ.re)
+
+lemma re_sum_zeros_nonneg (S : Finset ℂ) (z : ℂ) (hz : ∀ ρ ∈ S, ρ.re < z.re) :
+    0 ≤ (∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))).re := by
+  rw [Complex.re_sum]
+  apply Finset.sum_nonneg
+  intro ρ hρ
+  have h_div : (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)) =
+      ((analyticOrderAt riemannZeta ρ).toNat : ℂ) * (1 / (z - ρ)) := by
+    rw [div_eq_mul_one_div]
+  rw [h_div]
+  have h_re : (((analyticOrderAt riemannZeta ρ).toNat : ℂ) * (1 / (z - ρ))).re =
+      ((analyticOrderAt riemannZeta ρ).toNat : ℝ) * (1 / (z - ρ)).re := by
+    simp
+  rw [h_re]
+  exact mul_nonneg (Nat.cast_nonneg _) (re_div_zero_pos z ρ (hz ρ hρ))
+
+lemma re_sum_zeros_ge_single (S : Finset ℂ) (z ρ₀ : ℂ) (hmem : ρ₀ ∈ S)
+    (hz : ∀ ρ ∈ S, ρ.re < z.re) (him : z.im = ρ₀.im)
+    (hm : 1 ≤ (analyticOrderAt riemannZeta ρ₀).toNat) :
+    1 / (z.re - ρ₀.re) ≤ (∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))).re := by
+  rw [Complex.re_sum]
+  have h_split : ∑ x ∈ S, (((analyticOrderAt riemannZeta x).toNat : ℂ) / (z - x)).re =
+      (((analyticOrderAt riemannZeta ρ₀).toNat : ℂ) / (z - ρ₀)).re +
+      ∑ x ∈ S.erase ρ₀, (((analyticOrderAt riemannZeta x).toNat : ℂ) / (z - x)).re := by
+    exact (Finset.add_sum_erase S (fun x => (((analyticOrderAt riemannZeta x).toNat : ℂ) / (z - x)).re) hmem).symm
+  rw [h_split]
+  have h_nonneg : 0 ≤ ∑ x ∈ S.erase ρ₀, (((analyticOrderAt riemannZeta x).toNat : ℂ) / (z - x)).re := by
+    apply Finset.sum_nonneg
+    intro ρ hρ
+    have hρ_in : ρ ∈ S := Finset.mem_of_mem_erase hρ
+    have h_div : (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)) =
+        ((analyticOrderAt riemannZeta ρ).toNat : ℂ) * (1 / (z - ρ)) := by
+      rw [div_eq_mul_one_div]
+    rw [h_div]
+    have h_re : (((analyticOrderAt riemannZeta ρ).toNat : ℂ) * (1 / (z - ρ))).re =
+        ((analyticOrderAt riemannZeta ρ).toNat : ℝ) * (1 / (z - ρ)).re := by
+      simp
+    rw [h_re]
+    exact mul_nonneg (Nat.cast_nonneg _) (re_div_zero_pos z ρ (hz ρ hρ_in))
+  have h_ρ0 : 1 / (z.re - ρ₀.re) ≤ (((analyticOrderAt riemannZeta ρ₀).toNat : ℂ) / (z - ρ₀)).re := by
+    have h_div : (((analyticOrderAt riemannZeta ρ₀).toNat : ℂ) / (z - ρ₀)) =
+        ((analyticOrderAt riemannZeta ρ₀).toNat : ℂ) * (1 / (z - ρ₀)) := by
+      rw [div_eq_mul_one_div]
+    rw [h_div]
+    have h_re : (((analyticOrderAt riemannZeta ρ₀).toNat : ℂ) * (1 / (z - ρ₀))).re =
+        ((analyticOrderAt riemannZeta ρ₀).toNat : ℝ) * (1 / (z - ρ₀)).re := by
+      simp
+    rw [h_re, re_div_same_im z ρ₀ (hz ρ₀ hmem) him]
+    have h_pos : 0 < 1 / (z.re - ρ₀.re) := by
+      have : 0 < z.re - ρ₀.re := sub_pos.mpr (hz ρ₀ hmem)
+      exact one_div_pos.mpr this
+    have h_m_le : (1 : ℝ) ≤ ((analyticOrderAt riemannZeta ρ₀).toNat : ℝ) := by
+      exact_mod_cast hm
+    calc
+      1 / (z.re - ρ₀.re) = 1 * (1 / (z.re - ρ₀.re)) := by ring
+      _ ≤ ((analyticOrderAt riemannZeta ρ₀).toNat : ℝ) * (1 / (z.re - ρ₀.re)) :=
+        mul_le_mul_of_nonneg_right h_m_le (le_of_lt h_pos)
+  linarith
+
+lemma neg_re_logDeriv_le_sum_bound (z : ℂ) (S : Finset ℂ) (E : ℝ)
+    (h_dist : ‖logDerivZeta z - ∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))‖ ≤ E) :
+    (-logDerivZeta z).re ≤ E - (∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))).re := by
+  have h_re := Complex.re_le_norm (∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)) - logDerivZeta z)
+  have h_norm_eq : ‖∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)) - logDerivZeta z‖ =
+      ‖logDerivZeta z - ∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))‖ := by
+    rw [← norm_neg]
+    congr 1
+    ring
+  rw [h_norm_eq] at h_re
+  have h_le : (∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)) - logDerivZeta z).re ≤ E :=
+    le_trans h_re h_dist
+  have h_sub_re : (∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)) - logDerivZeta z).re =
+      (∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))).re - (logDerivZeta z).re := by
+    simp
+  rw [h_sub_re] at h_le
+  rw [Complex.neg_re]
+  linarith
+
+lemma neg_re_logDeriv_le_of_nonneg (z : ℂ) (S : Finset ℂ) (E : ℝ)
+    (h_dist : ‖logDerivZeta z - ∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))‖ ≤ E)
+    (hz : ∀ ρ ∈ S, ρ.re < z.re) :
+    (-logDerivZeta z).re ≤ E := by
+  have h1 := neg_re_logDeriv_le_sum_bound z S E h_dist
+  have h2 := re_sum_zeros_nonneg S z hz
+  linarith
+
+lemma neg_re_logDeriv_le_single (z ρ₀ : ℂ) (S : Finset ℂ) (E : ℝ)
+    (h_dist : ‖logDerivZeta z - ∑ ρ ∈ S, (((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ))‖ ≤ E)
+    (hmem : ρ₀ ∈ S) (hz : ∀ ρ ∈ S, ρ.re < z.re) (him : z.im = ρ₀.im)
+    (hm : 1 ≤ (analyticOrderAt riemannZeta ρ₀).toNat) :
+    (-logDerivZeta z).re ≤ - (1 / (z.re - ρ₀.re)) + E := by
+  have h1 := neg_re_logDeriv_le_sum_bound z S E h_dist
+  have h2 := re_sum_zeros_ge_single S z ρ₀ hmem hz him hm
+  linarith
+
 end Erdos1201.MR.Vinogradov
 
 namespace Erdos1201.MR
@@ -346,6 +749,27 @@ export Erdos1201.MR.Vinogradov (
   zero_free_of_zeta_bound
   zeta_analytic_on_closedBall_1
   log_Deriv_Expansion_Zeta_general
+  zeros_finite_general
+  re_one_div
+  neg_re_le_norm
+  div_pow_two
+  abs_term_bound_general
+  cond_general
+  abs_term_inv_bound_general
+  abs_zeta_inequality_general
+  one_minus_le_inv_one_plus
+  p_s_real_lt_one
+  term_bound2
+  abs_zeta_ratio_eval_general
+  zeta_lower_bound_general
+  zeta_bound_on_disk_general
+  re_div_zero_pos
+  re_div_same_im
+  re_sum_zeros_nonneg
+  re_sum_zeros_ge_single
+  neg_re_logDeriv_le_sum_bound
+  neg_re_logDeriv_le_of_nonneg
+  neg_re_logDeriv_le_single
 )
 
 end Erdos1201.MR
