@@ -71,6 +71,14 @@ import Erdos1201.MR.Vinogradov.MeanValueTheorem
 import Erdos1201.MR.Prop1.RPointwise
 import Erdos1201.MR.Analysis.VanDerCorputSecondIterated
 import Erdos1201.MR.Prop1.E1Unsifted
+import Erdos1201.MR.Sieve.SmoothTailExp
+import Erdos1201.MR.Analysis.VanDerCorputKth
+import Erdos1201.MR.Prop1.UsetCard
+import Erdos1201.MR.Prop1.UsetSmall
+import Erdos1201.MR.Twisted.TwistedBounds
+import Erdos1201.MR.Vinogradov.PrimeSelectionSq
+import Erdos1201.MR.Twisted.TwistedPrimeSums
+import Erdos1201.MR.Prop1.EjUnsifted
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules
