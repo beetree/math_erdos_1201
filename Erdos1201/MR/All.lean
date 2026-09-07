@@ -68,6 +68,7 @@ import Erdos1201.MR.Vinogradov.CongruencingStep
 import Erdos1201.MR.Twisted.TwistedContour
 import Erdos1201.MR.Prop1.Ej
 import Erdos1201.MR.Vinogradov.MeanValueTheorem
+import Erdos1201.MR.Prop1.RPointwise
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules

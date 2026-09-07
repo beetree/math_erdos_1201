@@ -98,6 +98,29 @@ since `(X^β)^2 > 2X` every `n ≤ 2X` has at most one prime factor above `X^β`
   removal of `S`, and the Chebyshev-count reduction `ShortIntervalAssembly`
   (`smoothShortIntervalInput_of_restricted_shortMeanEnergies`).
 
+### Endgame without the sifted set (2026-09-06, night)
+
+Lemma 12 (`integral_norm_sq_F_le_sum_QR`) is stated for arbitrary coefficients with the
+factorisation `a(pm) = b(m) c(p)` and carries the unsifted count `#{n : no prime factor in [P,Q]}/X`
+as an explicit error term, bounded by the range sieve (`≪ log P/log Q`). Hence Proposition 1 can be
+run for the **unsifted** polynomial `Fu β X s = ∑_{X<n≤2X} f_X(n) n^{-s}` (`Setup.lean`), whose
+coefficients are completely multiplicative (`fX_mul_of_prime_le`). Consequences:
+- E_1, E_j, U-part and the Proposition 1 assembly are stated for `Fu` (tasks `prop1_E1_unsifted`,
+  `prop1_Ej_unsifted`, …); the sifted `F` versions already proved (E1 uniform) serve as templates.
+- The final deduction needs no sieve comparison and no inclusion–exclusion: Lemma 14
+  (`variance_windowSum_le`, with `a = f_X` on `(X, 2X]`) gives
+  `(1/X)∫_X^{2X} |window mean at h₁ − window mean at h₂|²` in terms of `T₀⁴(h₂/X)²` and the
+  weighted mean square of `Fu(1+it)` over `|t| ≥ T₀`, which Proposition 1 bounds by
+  `(TQ₁/X + 1)·o(1)` (dyadically for `|t| ≥ X/h₁`, using `Q₁ ≤ h₁`). Since window sums with
+  integer window length are constant on unit intervals, the integral equals the discrete sum of
+  `|shortMean(f,h₁,n) − shortMean(f,h₂,n)|²`; Chebyshev gives the exceptional count, and
+  `MediumAverage.abs_intervalMean_sub_blockMean_le` (h₂ ≥ X/(log X)^{1/5}) replaces the
+  h₂-window mean by the block mean. `ShortIntervalAssembly` is then only needed with `S = univ`
+  (or bypassed entirely).
+- Parameters: T₀ = (log X)^{1/15}, h₂ = X/(log X)^{1/5}, U-part ranges P = exp((log X)^{1−a}),
+  Q = exp(log X/log log X), H = (log X)^{a} with a ≤ 1/200; twisted prime sums (★) with
+  Z = exp((log X)^{19/20}) and the main-term form `sum_primes_cpow_sub_integral_le`.
+
 ## Infrastructure
 
 - `Erdos1201/Vendor/`: 135 modules copied from solve-math (same toolchain and Mathlib),
