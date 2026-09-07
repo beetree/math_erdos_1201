@@ -43,12 +43,14 @@ import Erdos1201.MR.Sieve.SmoothTail
 import Erdos1201.MR.SupportReduction
 import Erdos1201.MR.Target
 import Erdos1201.MR.Vinogradov.CurveCounts
+import Erdos1201.MR.Vinogradov.FiniteFourier
 import Erdos1201.MR.Vinogradov.HolderReduction
 import Erdos1201.MR.Vinogradov.LinearBilinearSum
 import Erdos1201.MR.Vinogradov.Linnik
 import Erdos1201.MR.Vinogradov.PrimeSelection
 import Erdos1201.MR.Vinogradov.PrimeSelectionMain
 import Erdos1201.MR.Vinogradov.PrimeSelectionFinal3
+import Erdos1201.MR.Vinogradov.PrimesInRange
 import Erdos1201.MR.Vinogradov.TaylorReduction
 import Erdos1201.MR.Vinogradov.TaylorReductionMain
 import Erdos1201.MR.Vinogradov.ZeroFreeGeneral
