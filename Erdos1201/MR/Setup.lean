@@ -37,6 +37,10 @@ noncomputable def coeffF (β : ℝ) (J : ℕ) (R : Fin J → Finset ℕ) (X : �
 /-- F(s) = ∑_{X < n ≤ 2X, n ∈ S} f_X(n) n^{-s}. -/
 noncomputable def F (β : ℝ) (J : ℕ) (R : Fin J → Finset ℕ) (X : ℕ) (s : ℂ) : ℂ := dirichletPoly (coeffF β J R X) (Finset.Ioc X (2 * X)) s
 
+/-- The unsifted polynomial `F_u(s) = ∑_{X < n ≤ 2X} f_X(n) n^{-s}`; the sieve condition is not
+needed because Lemma 12 carries the unsifted count as an explicit error term. -/
+noncomputable def Fu (β : ℝ) (X : ℕ) (s : ℂ) : ℂ := dirichletPoly (fX β X) (Finset.Ioc X (2 * X)) s
+
 /-- Short prime range [e^{v/H}, e^{(v+1)/H}] intersected with [P, Q]. -/
 noncomputable def shortPrimeRange (P Q : ℕ) (H : ℝ) (v : ℕ) : Finset ℕ := (primeRange P Q).filter (fun p => Real.exp (v / H) ≤ p ∧ (p : ℝ) < Real.exp ((v + 1) / H))
 
