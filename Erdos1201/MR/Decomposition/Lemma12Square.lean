@@ -187,7 +187,7 @@ lemma squareCorrection_eq_sqCoeff (X P Q : ℕ) (a b c w : ℕ → ℂ) :
     intro n hn
     have hn_Ioc : n ∈ Finset.Ioc X (2 * X) := hn
     unfold sqCoeff
-    rw [if_pos hn_Ioc]
+    rw [ite_eq_left hn_Ioc]
     have h_eq : (primeRange P Q).filter (fun p => p ^ 2 ∣ n) = ((primeRange P Q).filter (fun p => p ∣ n)).filter (fun p => p ∣ n / p) := by
       ext p
       simp only [mem_filter]

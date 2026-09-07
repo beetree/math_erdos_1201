@@ -88,7 +88,7 @@ lemma intervalCount_eq_exceptional_card (f : ℕ → ℝ) (h X : ℕ) (δ : ℝ)
       (exceptional (Finset.Ioc X (2 * X))
         (discrepancy (shortWindow h) (Finset.Ico X (2 * X)) f (h : ℝ) (X : ℝ)) δ).card := by
   classical
-  simp only [intervalCount, exceptional, discrepancy_shortWindow, Set.mem_setOf_eq]
+  simp only [intervalCount, exceptional, discrepancy_shortWindow, Set.mem_ofPred_eq]
 
 /-- Exact finite support-removal estimate for the means used by the Erdős deduction. -/
 theorem intervalCount_le_restricted_shortMeanEnergies

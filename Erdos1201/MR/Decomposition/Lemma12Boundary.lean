@@ -43,7 +43,7 @@ lemma sum_ite_mul_eq_left (S : Finset ℕ) (p n : ℕ) (hp : 0 < p) (F : ℕ →
     simp
   · have hz : ∀ m ∈ S, (if p * m = n then F m else 0) = 0 := by
       intro m _
-      rw [if_neg]
+      rw [ite_eq_right]
       intro h
       exact hdvd ⟨m, h.symm⟩
     rw [Finset.sum_eq_zero hz]
@@ -157,10 +157,10 @@ theorem A1_eq_dirichletPoly (P Q X : ℕ) (b c : ℕ → ℂ) (s : ℂ) :
     rw [Finset.mem_Ioc]
     omega
   rw [Finset.sum_eq_single (p * m)]
-  · simp only [if_true]
+  · simp only [ite_true]
     ring
   · intro n _ hne
-    rw [if_neg (fun h => hne h.symm)]
+    rw [ite_eq_right (fun h => hne h.symm)]
   · intro h
     exact absurd hpm h
 
@@ -214,11 +214,11 @@ theorem QR_eq_dirichletPoly (P Q X : ℕ) (H : ℝ) (hH : 1 ≤ H) (b c : ℕ �
         _ = 6 * X := by ring
     exact_mod_cast this
   rw [Finset.sum_eq_single (p * m)]
-  · simp only [if_true]
+  · simp only [ite_true]
     rw [natCast_cpow_neg_mul p m hp0 hm_pos s]
     ring
   · intro n _ hne
-    rw [if_neg (fun h => hne h.symm)]
+    rw [ite_eq_right (fun h => hne h.symm)]
   · intro h
     exact absurd hpm h
 
@@ -268,7 +268,7 @@ lemma coeffQR_eq (P Q X : ℕ) (H : ℝ) (hH : 1 ≤ H) (hP : 1 ≤ P) (b c : �
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl (fun p hp => ?_)
   rw [Finset.sum_ite_eq']
-  rw [if_pos (rangeIndex_mem_Icc P Q H hH0 hP p hp)]
+  rw [ite_eq_left (rangeIndex_mem_Icc P Q H hH0 hP p hp)]
 
 /-! ### The boundary strips -/
 
@@ -492,7 +492,7 @@ lemma coeffDiff_eq (P Q X : ℕ) (H : ℝ) (hH : 1 ≤ H) (hP : 1 ≤ P) (b c : 
   rw [coeffA1_eq, coeffQR_eq P Q X H hH hP, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl (fun p _ => ?_)
   by_cases hd : p ∣ n
-  · simp only [hd, true_and, if_true]
+  · simp only [hd, true_and, ite_true]
     split_ifs <;> ring
   · simp [hd]
 
@@ -508,7 +508,7 @@ lemma norm_coeffDiff_le_one (P Q X : ℕ) (H : ℝ) (hH : 1 ≤ H) (hP : 1 ≤ P
       if p ∣ n then 1 / ((omegaIn (primeRange P Q) (n / p) : ℝ) + 1) else 0 := by
     intro p _
     by_cases hd : p ∣ n
-    · rw [if_pos hd, if_pos hd, norm_mul]
+    · rw [ite_eq_left hd, ite_eq_left hd, norm_mul]
       have h1 := norm_weight_le P Q b c hb hc p (n / p)
       have h2 : ‖((if n ∈ Finset.Ioc X (2 * X) then (1 : ℂ) else 0) -
           (if n / p ∈ cofactorRange X H (rangeIndex H p) then (1 : ℂ) else 0))‖ ≤ 1 := by
@@ -528,17 +528,17 @@ lemma coeffDiff_eq_zero_of_not_mem (P Q X : ℕ) (H : ℝ) (hH : 1 ≤ H) (hP : 
   apply Finset.sum_eq_zero
   intro p hp
   by_cases hd : p ∣ n
-  · rw [if_pos hd]
+  · rw [ite_eq_left hd]
     have hiff : n ∈ Finset.Ioc X (2 * X) ↔ n / p ∈ cofactorRange X H (rangeIndex H p) := by
       by_contra hne
       exact hn (mem_boundaryStrip_of_ne X H hH p n (two_le_of_mem_primeRange hp) hd hne)
     have : ((if n ∈ Finset.Ioc X (2 * X) then (1 : ℂ) else 0) -
         (if n / p ∈ cofactorRange X H (rangeIndex H p) then (1 : ℂ) else 0)) = 0 := by
       by_cases h1 : n ∈ Finset.Ioc X (2 * X)
-      · rw [if_pos h1, if_pos (hiff.mp h1)]; ring
-      · rw [if_neg h1, if_neg (fun h2 => h1 (hiff.mpr h2))]; ring
+      · rw [ite_eq_left h1, ite_eq_left (hiff.mp h1)]; ring
+      · rw [ite_eq_right h1, ite_eq_right (fun h2 => h1 (hiff.mpr h2))]; ring
     rw [this, mul_zero]
-  · rw [if_neg hd]
+  · rw [ite_eq_right hd]
 
 /-- The `ℓ²` mass of the difference coefficient is at most `6/(HX)`. -/
 lemma sum_norm_sq_coeffDiff_le (P Q X : ℕ) (H : ℝ) (hH : 1 ≤ H) (hP : 1 ≤ P) (hX : 1 ≤ X)

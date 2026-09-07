@@ -156,7 +156,7 @@ lemma one_add_mul_I_ne_zero (t : ℝ) : (1 : ℂ) + (t : ℂ) * Complex.I ≠ 0 
 /-- `lowPart` is continuous in the window parameter `u ∈ [0, 1]`. -/
 lemma continuousOn_lowPart_param (a : ℕ → ℂ) (N : Finset ℕ) (T₀ y : ℝ) (hN : ∀ n ∈ N, 0 < n) :
     ContinuousOn (fun u : ℝ => lowPart a N u T₀ y) (Set.Icc 0 1) := by
-  rw [continuousOn_iff_continuous_restrict]
+  rw [continuousOn_iff_continuous_domRestrict]
   have hA := continuous_dirichletPoly_one_line a N hN
   let f : Set.Icc (0 : ℝ) 1 → ℝ → ℂ := fun u t =>
     dirichletPoly a N ((1 : ℂ) + t * Complex.I) * windowKernel u t * Complex.exp (t * y * Complex.I)
@@ -631,7 +631,7 @@ lemma integrable_high_pair (a : ℕ → ℂ) (N : Finset ℕ) (T₀ X X₂ c d s
   have hL : AEStronglyMeasurable (fun p : ℝ × ℝ => lowPart a N p.2 T₀ (Real.log (p.1 + sh)))
       ((volume.prod volume).restrict (Ioc X X₂ ×ˢ Ioc c d)) := by
     refine ContinuousOn.aestronglyMeasurable ?_ hmeasSet
-    rw [continuousOn_iff_continuous_restrict]
+    rw [continuousOn_iff_continuous_domRestrict]
     have hcont := continuous_lowPart_pair a N T₀ hN
     have hd1 : d ≤ 1 := by linarith
     let φ : (Ioc X X₂ ×ˢ Ioc c d : Set (ℝ × ℝ)) → Set.Icc (0 : ℝ) 1 × ℝ := fun p =>
@@ -829,7 +829,7 @@ lemma windowFun_zero (a : ℕ → ℂ) (N : Finset ℕ) (y : ℝ) : windowFun a 
   right
   apply Finset.sum_eq_zero
   intro n _
-  rw [if_neg]
+  rw [ite_eq_right]
   rintro ⟨h1, h2⟩
   linarith [show (Real.exp y * (1 + 0) : ℝ) = Real.exp y by ring]
 
@@ -1256,7 +1256,7 @@ lemma weightedMeanSq_mono (a : ℕ → ℂ) (N : Finset ℕ) (T₀ X h₁ h₂ :
     apply min_le_min_left
     have ht0 : t ≠ 0 := by
       intro h0
-      simp only [Set.mem_setOf_eq, h0, abs_zero] at ht
+      simp only [Set.mem_ofPred_eq, h0, abs_zero] at ht
       linarith
     have habs : 0 < |t| := abs_pos.mpr ht0
     rw [div_pow, div_pow, mul_pow, mul_pow]
