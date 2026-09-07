@@ -91,7 +91,7 @@ $\underline d(A)=\liminf_{N\to\infty}|A\cap[1,N]|/N$, with $P^+(1)=1$, and prove
 Theorem 1: for every $\varepsilon>0$,
 
 $$
-\lim_{h\to\infty}\ \overline d\Bigl\{n\in\mathbb N : P^+\Bigl(\prod_{j=0}^{h-1}(n+j)\Bigr)\le n^{1-\varepsilon}\Bigr\}=0,
+\lim_{h\to\infty}\ \overline d\Bigl\lbrace n\in\mathbb N : P^+\Bigl(\prod_{j=0}^{h-1}(n+j)\Bigr)\le n^{1-\varepsilon}\Bigr\rbrace=0,
 $$
 
 from which the requested statement follows with $k+1$ factors.
@@ -125,9 +125,9 @@ noncomputable def lowerDensity (A : Set ℕ) : ℝ := liminf (density A) atTop
 | --- | --- |
 | `largestPrimeFactor n` | $P^+(n)$: the largest prime divisor of $n$, with $P^+(1)=1$ (and value $1$ at $n=0$, which is excluded below). |
 | `consecutiveProduct n h` | $n(n+1)\cdots(n+h-1)$, a product of $h$ consecutive integers. |
-| `goodSet ε k` | $\{n\ge1 : P^+(n(n+1)\cdots(n+k))>n^{1-\varepsilon}\}$, the set $\mathcal G_{\varepsilon,k}$ of the paper; the product has $k+1$ factors. |
-| `badSet ε h` | $\{n\ge1 : P^+(\prod_{j<h}(n+j))\le n^{1-\varepsilon}\}$, the set $\mathcal B_{\varepsilon,h}$ of the paper. |
-| `density A N` | $\lvert A\cap[1,N]\rvert/N$ (`Ioc 0 N` is $\{1,\dots,N\}$). |
+| `goodSet ε k` | $\lbrace n\ge1 : P^+(n(n+1)\cdots(n+k))>n^{1-\varepsilon}\rbrace$, the set $\mathcal G_{\varepsilon,k}$ of the paper; the product has $k+1$ factors. |
+| `badSet ε h` | $\lbrace n\ge1 : P^+(\prod_{j<h}(n+j))\le n^{1-\varepsilon}\rbrace$, the set $\mathcal B_{\varepsilon,h}$ of the paper. |
+| `density A N` | $\lvert A\cap[1,N]\rvert/N$ (`Ioc 0 N` is $\lbrace 1,\dots,N\rbrace$). |
 | `lowerDensity A`, `upperDensity A` | $\underline d(A)$ and $\overline d(A)$, as `liminf`/`limsup` in $\mathbb R$ of the density sequence, which lies in $[0,1]$. |
 | `(n : ℝ) ^ (1 - ε)` | the real power $n^{1-\varepsilon}$; `ε` is any positive real, so $\varepsilon\ge1$ is allowed (the conclusion is then trivial, as in the paper). |
 
