@@ -11,10 +11,11 @@ Preserve this attribution prominently throughout the repository, including in al
 
 ## Formalization Status & Analytic Trust Boundary
 
-The formalization verifies the paper's deduction **conditional on exactly one remaining explicit analytic hypothesis**, `QuantitativeShortIntervalInput` (the quantitative Matomäki–Radziwiłł short-interval theorem). It does **not** provide an unconditional proof of Erdős Problem #1201.
+The formalization now verifies the paper's deduction **unconditionally**. The one analytic input the deduction needs, the Matomäki–Radziwiłł short-interval theorem (arXiv:1501.04585v4) applied to the $X^\beta$-smooth indicator with $3/4 \le \beta < 1$, is stated as `SmoothShortIntervalInput` in [`Erdos1201/MR/Target.lean`](Erdos1201/MR/Target.lean) and proved in [`Erdos1201/MR/FinalAssembly.lean`](Erdos1201/MR/FinalAssembly.lean) (`Erdos1201.MR.smoothShortIntervalInput_holds`). The final theorems in [`Erdos1201/Final.lean`](Erdos1201/Final.lean) carry no hypothesis beyond the positivity of the parameters, and the axiom audit shows they depend only on `propext`, `Classical.choice`, and `Quot.sound`.
 
-### The Single Remaining External Hypothesis
-- **Quantitative Matomäki–Radziwiłł Short-Interval Theorem** (`QuantitativeShortIntervalInput`): An explicit quantitative short-interval variance estimate for completely multiplicative functions with values in $[-1, 1]$. In [`Erdos1201/Quantitative.lean`](Erdos1201/Quantitative.lean), we formally prove that this implies the qualitative uniform interface `ShortIntervalInput` (`QuantitativeShortIntervalInput.to_shortIntervalInput`). This deep number-theoretic result is isolated as an explicit hypothesis proposition (`Prop`), **never** introduced as a Lean `axiom` declaration.
+### The Short-Interval Input, Proved
+- **Matomäki–Radziwiłł for the smooth indicator** (`SmoothShortIntervalInput`): for every $3/4 \le \beta < 1$, $\delta > 0$, $\eta > 0$, for all large $h$ and then all large $X$, the number of $n \in (X, 2X]$ at which the mean of the $X^\beta$-smooth indicator over $[n, n+h)$ differs from its mean over $[X, 2X)$ by more than $\delta$ is at most $\eta X$. The proof follows arXiv:1501.04585v4 with two changes recorded in [`BLUEPRINT.md`](BLUEPRINT.md): the polynomial is not sieved (Lemma 12 carries the unsifted count as an error term), and Halász's theorem is replaced by a twisted prime-number theorem in short ranges obtained from a Vinogradov–Korobov zero-free region, itself proved from a weak Vinogradov mean value theorem.
+- The earlier conditional statements (`Erdos1201.erdos_problem_1201` with hypothesis `QuantitativeShortIntervalInput`) are kept as corollaries of the same deduction.
 
 ### Smooth-Number Analytic Input Proved Unconditionally
 The paper's second external input (Dickman–de Bruijn smooth-number asymptotics) is **not needed in full**. The core deduction only requires that for each fixed $0 < \beta < 1$, the dyadic block mean of the $X^\beta$-smooth indicator over $[X, 2X)$ stays bounded away from $1$ for all large $X$ (`SmoothUpperInput`). Rather than being assumed, this upper bound is now **proved unconditionally** from Chebyshev-type elementary prime bounds across three new modules:
@@ -34,25 +35,37 @@ To substantiate the mathematical foundations underlying the Matomäki–Radziwi�
 - [`Erdos1201/MR.lean`](Erdos1201/MR.lean): Aggregator module importing and re-exporting all four verified MR auxiliary modules.
 
 > [!NOTE]
-> These auxiliary lemmas supply finite combinatorial, algebraic, and Chebyshev reduction scaffolding; they do not prove `QuantitativeShortIntervalInput` (or `ShortIntervalInput`), nor do they discharge the Matomäki–Radziwiłł theorem.
+> These four modules are finite reduction scaffolding; the analytic proof of the short-interval input lives in the subdirectories described next.
 
-### Work in Progress: Proving the Short-Interval Input (`Erdos1201.MR.*`, `Erdos1201.Vendor.*`)
+### The Proof of the Short-Interval Input (`Erdos1201.MR.*`, `Erdos1201.Vendor.*`)
 
 The plan for removing the last hypothesis is recorded in [`BLUEPRINT.md`](BLUEPRINT.md). The deduction only ever applies the short-interval input to the $X^\beta$-smooth indicator with $3/4 \le \beta < 1$, in the qualitative form stated as `SmoothShortIntervalInput` in [`Erdos1201/MR/Target.lean`](Erdos1201/MR/Target.lean); that module already proves `erdos_problem_1201_of_smoothShortInterval` and `theorem1_of_smoothShortInterval`, so the remaining task is exactly `SmoothShortIntervalInput`, a specialisation of the Matomäki–Radziwiłł theorem to this one function.
 
 Towards it, the subdirectories `Erdos1201/MR/{Analysis,Parseval,Polynomials,Sieve,Decomposition,Vinogradov,Prop1}` (aggregated in [`Erdos1201/MR/All.lean`](Erdos1201/MR/All.lean)) contain verified building blocks following arXiv:1501.04585v4 and, for the zero-free region it needs, Vinogradov's mean value theorem after T. Tao's *254A, Notes 5*: mean value theorems for Dirichlet polynomials (Lemmas 6–7), Kusmin–Landau and van der Corput bounds, the prime-polynomial moment bounds (Lemma 8 with an elementary divisor bound in place of Shiu's theorem), the Saffari–Vaughan averaging and an $L^1 \cap L^2$ Plancherel identity for Lemma 14, Halberstam–Richert sieve upper bounds for the sifted set, the parameter system of Proposition 1, and parts of the Vinogradov–Korobov argument (curve counts, Linnik's lemma, the Hölder and Taylor reductions, the ζ bound from exponential sums, and a general zero-free-region theorem). Some of these modules prove only part of the corresponding lemma (their docstrings say which part); several statements in the Vinogradov chain are still stated relative to an explicit intermediate hypothesis (`BilinearEstimate`, the 3-4-1 inequality) that is being proved in later modules. `Erdos1201/Vendor/` holds modules copied verbatim (module paths renamed) from a separate formalization corpus with the same toolchain and Mathlib commit; they are compiled as part of this library and carry no external dependency.
 
 > [!NOTE]
-> None of the modules under `Erdos1201/MR/` or `Erdos1201/Vendor/` is used by the final theorems yet, and `SmoothShortIntervalInput` is not proved. Everything committed builds without `sorry`; files still under construction are not committed.
+> The chain ends in [`Erdos1201/MR/FinalAssembly.lean`](Erdos1201/MR/FinalAssembly.lean) (`smoothShortIntervalInput_holds`), which [`Erdos1201/Final.lean`](Erdos1201/Final.lean) feeds into the deduction. Everything committed builds without `sorry`.
 
 ### Trust Boundary and Axiom Audit Validation
 - **Lake Build Passed**: The entire repository builds cleanly with exit code 0 (`lake build` completed successfully).
 - **Standard Foundation**: The verified proofs in this project use only standard Lean 4 core axioms: `propext` (propositional extensionality), `Classical.choice` (axiom of choice), and `Quot.sound` (quotient soundness).
-- **No Unchecked Substitutes**: The final theorem audit (`lake env lean Erdos1201/Audit.lean`) checks the single final conditional theorem `Erdos1201.erdos_problem_1201`, listing only standard Lean axioms and no `sorryAx`. Auxiliary theorems and modules are compiled and verified as dependencies within the library build, but are not claimed to be individually axiom-audited by this one check. Across the codebase, there are strictly zero `sorry`, zero `admit`, zero custom `axiom` declarations, and zero `unsafe` constructs.
-- **Single Analytic Result Remains an Explicit Hypothesis**: The result `QuantitativeShortIntervalInput` remains the sole explicit `Prop` hypothesis in the final theorems. A clean build verifies the implication from this single analytic hypothesis to the Erdős problem conclusions, rather than an unconditional proof.
+- **No Unchecked Substitutes**: The final theorem audit (`lake env lean Erdos1201/Audit.lean`) checks the single final unconditional theorem `Erdos1201.erdos_problem_1201_unconditional`, listing only standard Lean axioms and no `sorryAx`. Auxiliary theorems and modules are compiled and verified as dependencies within the library build, but are not claimed to be individually axiom-audited by this one check. Across the codebase, there are strictly zero `sorry`, zero `admit`, zero custom `axiom` declarations, and zero `unsafe` constructs.
+- **No Analytic Hypothesis Remains**: `SmoothShortIntervalInput` is proved, so the final theorems are unconditional; the conditional forms with `QuantitativeShortIntervalInput` are retained only as corollaries.
 
-### Final Verified Wrapper Theorems
-The top-level theorems, exported in [`Erdos1201/Main.lean`](Erdos1201/Main.lean) (with the final theorem `erdos_problem_1201` axiom-audited in [`Erdos1201/Audit.lean`](Erdos1201/Audit.lean)), are:
+### Final Verified Theorems
+The unconditional theorems, exported in [`Erdos1201/Final.lean`](Erdos1201/Final.lean) (with `erdos_problem_1201_unconditional` axiom-audited in [`Erdos1201/Audit.lean`](Erdos1201/Audit.lean)), are:
+- `Erdos1201.theorem1_unconditional`:
+  ```lean
+  theorem theorem1_unconditional {ε : ℝ} (hε : 0 < ε) :
+      Tendsto (fun h : ℕ => upperDensity (badSet ε h)) atTop (𝓝 0)
+  ```
+- `Erdos1201.erdos_problem_1201_unconditional`:
+  ```lean
+  theorem erdos_problem_1201_unconditional {ε η : ℝ} (hε : 0 < ε) (hη : 0 < η) :
+      ∃ k : ℕ, 1 - η ≤ lowerDensity (goodSet ε k)
+  ```
+
+The conditional wrappers in [`Erdos1201/Main.lean`](Erdos1201/Main.lean), retained as corollaries, are:
 - `Erdos1201.theorem1`:
   ```lean
   theorem theorem1
@@ -109,7 +122,7 @@ lake exe cache get
 # Compile the project
 lake build
 
-# Verify axiom dependencies of the final conditional theorem
+# Verify axiom dependencies of the final unconditional theorem
 lake env lean Erdos1201/Audit.lean
 ```
 
