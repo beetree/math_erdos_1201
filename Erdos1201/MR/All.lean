@@ -91,6 +91,8 @@ import Erdos1201.MR.Prop1.UsetRBound
 import Erdos1201.MR.Prop1.UsetLarge
 import Erdos1201.MR.Prop1.UsetAssembly
 import Erdos1201.MR.Prop1.Assembly
+import Erdos1201.MR.FinalAssembly
+import Erdos1201.MR.FrequencyIntegral
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules
