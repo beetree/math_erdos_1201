@@ -37,7 +37,8 @@ The classical argument combines:
    - `zero_free_of_341_bound`: deduces the zero-free region from the 3-4-1 bound.
    - `zero_free_of_classical_subordinate`: deduces the zero-free region when $\theta/\varphi \le M/\log(t+2)$
      unconditionally from the vendored capstone `ZetaZeroFreeRegion.zerofree`.
-   - `zero_free_of_zeta_bound`: the general zero-free region under growth bounds.
+   - `zero_free_of_zeta_bound`: the general zero-free region under growth bounds and 3-4-1 input.
+   - `zero_free_of_zeta_bound'`: the general zero-free region under growth bounds, fully unconditional.
 -/
 
 open Complex Metric ZetaFunctionEstimates AnalyticZeroCounting ZetaZeroFreeRegion
@@ -856,6 +857,532 @@ lemma trig_341_inequality_combine (δ t : ℝ) (hδ : 0 < δ) (σ : ℝ) (C₀ E
   rw [h3, h4]
   linarith
 
+lemma norm_zeta_one_add_half_theta_le (θ : ℝ) (hθpos : 0 < θ) (hθle : θ ≤ 1 / 2) :
+    norm (riemannZeta ((1 + θ / 2 : ℝ) : ℂ)) ≤ 3 / θ := by
+  let s : ℂ := ((1 + θ / 2 : ℝ) : ℂ)
+  have hs_re : 1 / 10 < s.re := by
+    dsimp [s]
+    have : 0 < θ / 2 := by linarith
+    have : 1 < 1 + θ / 2 := by linarith
+    linarith
+  have hs_ne : s ≠ 1 := by
+    intro h
+    have : s.re = 1 := by rw [h]; simp
+    dsimp [s] at this
+    linarith
+  have hzb := lem_zetaBound3 s hs_re hs_ne
+  have h_norm_s_sub_1 : ‖s - 1‖ = θ / 2 := by
+    dsimp [s]
+    have : (((1 + θ / 2 : ℝ) : ℂ) - 1) = ((θ / 2 : ℝ) : ℂ) := by
+      push_cast
+      ring
+    rw [this, Complex.norm_real]
+    exact abs_of_pos (by linarith)
+  have h_s_re : s.re = 1 + θ / 2 := rfl
+  have h_norm_s : ‖s‖ = 1 + θ / 2 := by
+    dsimp [s]
+    rw [Complex.norm_real]
+    exact abs_of_pos (by linarith)
+  have h_div_re : ‖s‖ / s.re = 1 := by
+    rw [h_norm_s, h_s_re]
+    exact div_self (by linarith)
+  rw [h_norm_s_sub_1, h_div_re] at hzb
+  have h_one_div : 1 / (θ / 2) = 2 / θ := by ring
+  rw [h_one_div] at hzb
+  have h_alg : 1 + 2 / θ + 1 = 2 + 2 / θ := by ring
+  rw [h_alg] at hzb
+  have h2_le : 2 ≤ 1 / θ := by
+    have h_mul : 2 * θ ≤ 1 := by linarith
+    exact (le_div_iff₀ hθpos).mpr (by linarith)
+  have h_sum : 2 + 2 / θ ≤ 1 / θ + 2 / θ := by linarith
+  have h_three : 1 / θ + 2 / θ = 3 / θ := by ring
+  rw [h_three] at h_sum
+  exact le_trans hzb h_sum
+
+lemma inv_norm_zeta_center_le (θ t : ℝ) (hθpos : 0 < θ) (hθle : θ ≤ 1 / 2) :
+    1 / norm (riemannZeta ((1 + θ / 2 : ℝ) + t * Complex.I)) ≤ 3 / θ := by
+  have hσ : 1 < 1 + θ / 2 := by linarith
+  have h1 : 1 / norm (riemannZeta ((1 + θ / 2 : ℝ) : ℂ)) ≤
+      norm (riemannZeta ((1 + θ / 2 : ℝ) + t * Complex.I)) :=
+    inv_norm_zeta_le_norm_zeta (1 + θ / 2) t hσ
+  rw [one_div] at h1
+  have h2 := norm_zeta_one_add_half_theta_le θ hθpos hθle
+  have hpos_norm : 0 < norm (riemannZeta ((1 + θ / 2 : ℝ) + t * Complex.I)) := by
+    apply norm_pos_iff.mpr
+    apply riemannZeta_ne_zero_of_one_lt_re
+    simp [hσ]
+  have hpos_real : 0 < norm (riemannZeta ((1 + θ / 2 : ℝ) : ℂ)) := by
+    apply norm_pos_iff.mpr
+    apply riemannZeta_ne_zero_of_one_lt_re
+    simp [hσ]
+  have h_swap : (norm (riemannZeta ((1 + θ / 2 : ℝ) + t * Complex.I)))⁻¹ ≤
+      norm (riemannZeta ((1 + θ / 2 : ℝ) : ℂ)) :=
+    (inv_le_comm₀ hpos_real hpos_norm).mp h1
+  have h_div : 1 / norm (riemannZeta ((1 + θ / 2 : ℝ) + t * Complex.I)) =
+      (norm (riemannZeta ((1 + θ / 2 : ℝ) + t * Complex.I)))⁻¹ := by rw [one_div]
+  rw [h_div]
+  exact le_trans h_swap h2
+
+lemma zeta_bound_on_disk_general' (θ φ : ℝ → ℝ)
+    (hθ : ∀ t, 3 ≤ t → 0 < θ t ∧ θ t ≤ 1 / 2)
+    (hθloc : ∀ t t', 3 ≤ t → |t' - t| ≤ 1 → θ t / 2 ≤ θ t')
+    (hφloc : ∀ t t', 3 ≤ t → |t' - t| ≤ 1 → φ t' ≤ 2 * φ t)
+    (hζ : ∀ (σ t : ℝ), 3 ≤ |t| → 1 - θ |t| ≤ σ → σ ≤ 2 → ‖riemannZeta (σ + t * Complex.I)‖ ≤ Real.exp (φ |t|))
+    (t : ℝ) (ht : 6 ≤ |t|) (z : ℂ)
+    (hz : z ∈ Metric.closedBall ((1 + θ |t| / 2 : ℝ) + t * Complex.I) (7 * θ |t| / 8)) :
+    ‖riemannZeta z‖ < Real.exp (2 * φ |t|) + 1 := by
+  have ht3 : 3 ≤ |t| := by linarith
+  have hθt := hθ |t| ht3
+  set c : ℂ := (1 + θ |t| / 2 : ℝ) + t * Complex.I
+  have hz_dist : dist z c ≤ 7 * θ |t| / 8 := Metric.mem_closedBall.mp hz
+  have h_norm : ‖z - c‖ ≤ 7 * θ |t| / 8 := by
+    rw [dist_eq] at hz_dist
+    exact hz_dist
+  have h_im_dist : |z.im - t| ≤ 7 * θ |t| / 8 := by
+    have h1 : z.im - t = (z - c).im := by simp [c]
+    rw [h1]
+    exact Complex.abs_im_le_norm (z - c) |>.trans h_norm
+  have hR_le_half : 7 * θ |t| / 8 ≤ 7 / 16 := by linarith [hθt.2]
+  have hR_le_1 : 7 * θ |t| / 8 ≤ 1 := by linarith [hR_le_half]
+  have h_im_le_1 : |z.im - t| ≤ 1 := le_trans h_im_dist hR_le_1
+  have h_diff_abs : |abs z.im - abs t| ≤ 1 :=
+    le_trans (abs_abs_sub_abs_le_abs_sub z.im t) h_im_le_1
+  have h_abs_im_ge3 : 3 ≤ |z.im| := by
+    have := (abs_le.mp h_diff_abs).1
+    linarith
+  have hθ_near := hθloc |t| |z.im| ht3 h_diff_abs
+  have hφ_near := hφloc |t| |z.im| ht3 h_diff_abs
+  have h_re_dist : |z.re - (1 + θ |t| / 2)| ≤ 7 * θ |t| / 8 := by
+    have h1 : z.re - (1 + θ |t| / 2) = (z - c).re := by simp [c]
+    rw [h1]
+    exact Complex.abs_re_le_norm (z - c) |>.trans h_norm
+  have h_re_bounds := abs_le.mp h_re_dist
+  have hσ_ge : 1 - θ |z.im| ≤ z.re := by
+    have h1 : 1 - θ |t| / 2 ≤ z.re := by linarith [h_re_bounds.1]
+    have h2 : 1 - θ |z.im| ≤ 1 - θ |t| / 2 := by linarith [hθ_near]
+    linarith
+  have hσ_le : z.re ≤ 2 := by
+    have : z.re ≤ 1 + θ |t| / 2 + 7 * θ |t| / 8 := by linarith [h_re_bounds.2]
+    linarith [hθt.2]
+  have hz_eq : z = z.re + z.im * Complex.I := (Complex.re_add_im z).symm
+  have hζ_bound := hζ z.re z.im h_abs_im_ge3 hσ_ge hσ_le
+  rw [← hz_eq] at hζ_bound
+  have h_exp_le : Real.exp (φ |z.im|) ≤ Real.exp (2 * φ |t|) :=
+    Real.exp_le_exp.mpr hφ_near
+  have h_lt : Real.exp (2 * φ |t|) < Real.exp (2 * φ |t|) + 1 := lt_add_one _
+  exact lt_of_le_of_lt (le_trans hζ_bound h_exp_le) h_lt
+
+lemma log_B_div_norm_zeta_le (θ φ : ℝ → ℝ)
+    (hθ : ∀ t, 3 ≤ t → 0 < θ t ∧ θ t ≤ 1 / 2)
+    (hφ : ∀ t, 3 ≤ t → 1 ≤ φ t)
+    (hθφ : ∀ t, 3 ≤ t → Real.log (3 / θ t) ≤ φ t)
+    (t : ℝ) (ht : 6 ≤ |t|) :
+    Real.log ((Real.exp (2 * φ |t|) + 1) / norm (riemannZeta ((1 + θ |t| / 2 : ℝ) + t * Complex.I))) ≤
+    4 * φ |t| := by
+  have ht3 : 3 ≤ |t| := by linarith
+  have hθpos := (hθ |t| ht3).1
+  have hθle := (hθ |t| ht3).2
+  have hφge := hφ |t| ht3
+  have hθφ_val := hθφ |t| ht3
+  set c : ℂ := (1 + θ |t| / 2 : ℝ) + t * Complex.I
+  set B : ℝ := Real.exp (2 * φ |t|) + 1
+  have hB_pos : 0 < B := by
+    dsimp [B]
+    positivity
+  have hc_re : 1 < c.re := by
+    dsimp [c]
+    simp
+    linarith
+  have hζc_pos : 0 < norm (riemannZeta c) := by
+    apply norm_pos_iff.mpr
+    exact riemannZeta_ne_zero_of_one_lt_re hc_re
+  have hinv_le : 1 / norm (riemannZeta c) ≤ 3 / θ |t| :=
+    inv_norm_zeta_center_le (θ |t|) t hθpos hθle
+  have h3θ_pos : 0 < 3 / θ |t| := div_pos (by norm_num) hθpos
+  have hdiv_eq : B / norm (riemannZeta c) = B * (1 / norm (riemannZeta c)) := by ring
+  have hdiv_pos : 0 < B / norm (riemannZeta c) := div_pos hB_pos hζc_pos
+  have hprod_le : B / norm (riemannZeta c) ≤ B * (3 / θ |t|) := by
+    rw [hdiv_eq]
+    exact mul_le_mul_of_nonneg_left hinv_le (le_of_lt hB_pos)
+  have hlog_le1 : Real.log (B / norm (riemannZeta c)) ≤ Real.log (B * (3 / θ |t|)) :=
+    Real.log_le_log hdiv_pos hprod_le
+  have hlog_mul : Real.log (B * (3 / θ |t|)) = Real.log B + Real.log (3 / θ |t|) :=
+    Real.log_mul (ne_of_gt hB_pos) (ne_of_gt h3θ_pos)
+  have h2φ_nonneg : 0 ≤ 2 * φ |t| := by linarith
+  have hexp_ge_1 : 1 ≤ Real.exp (2 * φ |t|) := by
+    have := Real.exp_le_exp.mpr h2φ_nonneg
+    simpa using this
+  have hB_le : B ≤ 2 * Real.exp (2 * φ |t|) := by
+    dsimp [B]
+    linarith
+  have h2_le_e : (2 : ℝ) ≤ Real.exp 1 := by
+    have := Real.exp_one_gt_d9
+    linarith
+  have h2exp_le : 2 * Real.exp (2 * φ |t|) ≤ Real.exp 1 * Real.exp (2 * φ |t|) :=
+    mul_le_mul_of_nonneg_right h2_le_e (by positivity)
+  have he_mul : Real.exp 1 * Real.exp (2 * φ |t|) = Real.exp (2 * φ |t| + 1) := by
+    rw [← Real.exp_add]
+    ring_nf
+  have hB_le_exp : B ≤ Real.exp (2 * φ |t| + 1) := by
+    linarith [hB_le, h2exp_le, he_mul]
+  have hlog_B : Real.log B ≤ 2 * φ |t| + 1 := by
+    have hlog := Real.log_le_log hB_pos hB_le_exp
+    rwa [Real.log_exp] at hlog
+  have hlog_B_le : Real.log B ≤ 3 * φ |t| := by
+    linarith [hlog_B, hφge]
+  rw [hlog_mul] at hlog_le1
+  linarith [hlog_le1, hlog_B_le, hθφ_val]
+
+lemma logDerivZeta_expansion_bound (θ φ : ℝ → ℝ)
+    (hθ : ∀ t, 3 ≤ t → 0 < θ t ∧ θ t ≤ 1 / 2)
+    (hφ : ∀ t, 3 ≤ t → 1 ≤ φ t)
+    (hθloc : ∀ t t', 3 ≤ t → |t' - t| ≤ 1 → θ t / 2 ≤ θ t')
+    (hφloc : ∀ t t', 3 ≤ t → |t' - t| ≤ 1 → φ t' ≤ 2 * φ t)
+    (hζ : ∀ (σ t : ℝ), 3 ≤ |t| → 1 - θ |t| ≤ σ → σ ≤ 2 → ‖riemannZeta (σ + t * Complex.I)‖ ≤ Real.exp (φ |t|))
+    (hθφ : ∀ t, 3 ≤ t → Real.log (3 / θ t) ≤ φ t)
+    (t : ℝ) (ht : 6 ≤ |t|)
+    (hfin : (zerosetKfRc (3 * θ |t| / 4) ((1 + θ |t| / 2 : ℝ) + t * Complex.I) riemannZeta).Finite)
+    (z : ℂ) (hz_ball : z ∈ Metric.closedBall ((1 + θ |t| / 2 : ℝ) + t * Complex.I) (θ |t| / 2))
+    (hz_not : z ∉ zerosetKfRc (3 * θ |t| / 4) ((1 + θ |t| / 2 : ℝ) + t * Complex.I) riemannZeta) :
+    ‖logDerivZeta z - ∑ ρ ∈ hfin.toFinset, ((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z - ρ)‖ ≤
+      4 * K_geom * (φ |t| / θ |t|) := by
+  have ht3 : 3 ≤ |t| := by linarith
+  have hθpos := (hθ |t| ht3).1
+  have hθle := (hθ |t| ht3).2
+  have hradii := geom_radii_bounds (θ |t|) hθpos hθle
+  rcases hradii with ⟨hr1_pos, hr1_lt_r, hr_pos, hr_lt_R1, hR1_pos, hR1_lt_R, hR_lt_1⟩
+  set c : ℂ := (1 + θ |t| / 2 : ℝ) + t * Complex.I
+  set B : ℝ := Real.exp (2 * φ |t|) + 1
+  have hB_gt1 : 1 < B := by
+    dsimp [B]
+    have : 0 < Real.exp (2 * φ |t|) := Real.exp_pos _
+    linarith
+  have hc_re : 1 < c.re := by
+    dsimp [c]
+    simp
+    linarith
+  have hc_im : 3 ≤ |c.im| := by
+    dsimp [c]
+    simp
+    linarith
+  have h_bound : ∀ w ∈ Metric.closedBall c (7 * θ |t| / 8), ‖riemannZeta w‖ < B := by
+    intro w hw
+    exact zeta_bound_on_disk_general' θ φ hθ hθloc hφloc hζ t ht w hw
+  have hz_mem : z ∈ Metric.closedBall c (θ |t| / 2) \ zerosetKfRc (3 * θ |t| / 4) c riemannZeta :=
+    ⟨hz_ball, hz_not⟩
+  have hexp := log_Deriv_Expansion_Zeta_general
+    (θ |t| / 2) (5 * θ |t| / 8) (3 * θ |t| / 4) (7 * θ |t| / 8)
+    hr1_pos hr1_lt_r hr_pos hr_lt_R1 hR1_pos hR1_lt_R hR_lt_1
+    c hc_re hc_im B hB_gt1 h_bound hfin z hz_mem
+  have hgeom := geom_factor_eval (θ |t|) hθpos
+  rw [hgeom] at hexp
+  have hlog := log_B_div_norm_zeta_le θ φ hθ hφ hθφ t ht
+  have hKpos := K_geom_pos
+  have h_mul_le : (K_geom / θ |t|) * Real.log (B / ‖riemannZeta c‖) ≤
+      (K_geom / θ |t|) * (4 * φ |t|) := by
+    apply mul_le_mul_of_nonneg_left hlog
+    apply div_nonneg (le_of_lt hKpos) (le_of_lt hθpos)
+  have h_rearr : (K_geom / θ |t|) * (4 * φ |t|) = 4 * K_geom * (φ |t| / θ |t|) := by
+    ring
+  rw [h_rearr] at h_mul_le
+  exact le_trans hexp h_mul_le
+
+lemma error_at_2t_le (θ φ : ℝ → ℝ)
+    (hθ : ∀ t, 3 ≤ t → 0 < θ t ∧ θ t ≤ 1 / 2)
+    (hφ : ∀ t, 3 ≤ t → 1 ≤ φ t)
+    (hφθ : ∀ t, 3 ≤ t → φ (2 * t) ≤ 2 * φ t)
+    (hθdyadic : ∀ t, 3 ≤ t → θ t ≤ 2 * θ (2 * t))
+    (t : ℝ) (ht : 6 ≤ |t|) :
+    4 * K_geom * (φ |2 * t| / θ |2 * t|) ≤ 16 * K_geom * (φ |t| / θ |t|) := by
+  have ht3 : 3 ≤ |t| := by linarith
+  have h_abs_2t : |2 * t| = 2 * |t| := by
+    rw [abs_mul]
+    have : |(2:ℝ)| = 2 := by norm_num
+    rw [this]
+  rw [h_abs_2t]
+  have hφ_2t := hφθ |t| ht3
+  have hθ_2t := hθdyadic |t| ht3
+  have hθpos := (hθ |t| ht3).1
+  have ht_ge3_2t : 3 ≤ 2 * |t| := by linarith
+  have hθ2t_pos := (hθ (2 * |t|) ht_ge3_2t).1
+  have hφ_nonneg : 0 ≤ φ |t| := by linarith [hφ |t| ht3]
+  have hφ2t_nonneg : 0 ≤ φ (2 * |t|) := by linarith [hφ (2 * |t|) ht_ge3_2t]
+  have h_inv_θ : 1 / θ (2 * |t|) ≤ 2 / θ |t| := by
+    rw [div_le_div_iff₀ hθ2t_pos hθpos]
+    linarith
+  have h_ratio_le : φ (2 * |t|) / θ (2 * |t|) ≤ 4 * (φ |t| / θ |t|) := by
+    have h1 : φ (2 * |t|) / θ (2 * |t|) = φ (2 * |t|) * (1 / θ (2 * |t|)) := by ring
+    have h2 : 4 * (φ |t| / θ |t|) = (2 * φ |t|) * (2 / θ |t|) := by ring
+    rw [h1, h2]
+    have h_step1 : φ (2 * |t|) * (1 / θ (2 * |t|)) ≤ (2 * φ |t|) * (1 / θ (2 * |t|)) :=
+      mul_le_mul_of_nonneg_right hφ_2t (by positivity)
+    have h_step2 : (2 * φ |t|) * (1 / θ (2 * |t|)) ≤ (2 * φ |t|) * (2 / θ |t|) :=
+      mul_le_mul_of_nonneg_left h_inv_θ (by linarith)
+    exact le_trans h_step1 h_step2
+  have hKpos := K_geom_pos
+  have h4K_nonneg : 0 ≤ 4 * K_geom := by linarith
+  have h_mul := mul_le_mul_of_nonneg_left h_ratio_le h4K_nonneg
+  have h_rearr : 4 * K_geom * (4 * (φ |t| / θ |t|)) = 16 * K_geom * (φ |t| / θ |t|) := by ring
+  rwa [h_rearr] at h_mul
+
+lemma analyticOrderAt_riemannZeta_ge_one (ρ : ℂ) (hzero : riemannZeta ρ = 0) (hρim : 6 ≤ |ρ.im|) :
+    1 ≤ (analyticOrderAt riemannZeta ρ).toNat := by
+  have h_rho_ne_one : ρ ≠ (1 : ℂ) := by
+    intro h
+    have : ρ.im = 0 := by rw [h]; simp
+    rw [this, abs_zero] at hρim
+    norm_num at hρim
+  have hAnal : AnalyticAt ℂ riemannZeta ρ := analyticOn_riemannZeta ρ h_rho_ne_one
+  have hNotEv : ¬ (∀ᶠ z in nhds ρ, riemannZeta z = 0) :=
+    riemannZeta_not_eventually_zero_of_ne_one h_rho_ne_one
+  exact analyticOrderAt_pos_toNat_of_zero_of_analytic_not_eventually_zero hAnal hzero hNotEv
+
+/-- General zero-free region theorem for the Riemann zeta function (Titchmarsh, Theorem 3.10)
+from an upper bound on $\zeta(\sigma + it)$, unconditionally without extra axioms or assumptions. -/
+theorem zero_free_of_zeta_bound' (θ φ : ℝ → ℝ)
+    (hθ : ∀ t, 3 ≤ t → 0 < θ t ∧ θ t ≤ 1 / 2) (hθanti : AntitoneOn θ (Set.Ici 3))
+    (hφ : ∀ t, 3 ≤ t → 1 ≤ φ t) (hφmono : MonotoneOn φ (Set.Ici 3))
+    (hφθ : ∀ t, 3 ≤ t → φ (2 * t) ≤ 2 * φ t)
+    (hθdyadic : ∀ t, 3 ≤ t → θ t ≤ 2 * θ (2 * t))
+    (hθφ : ∀ t, 3 ≤ t → Real.log (3 / θ t) ≤ φ t)
+    (hθloc : ∀ t t' : ℝ, 3 ≤ t → |t' - t| ≤ 1 → θ t / 2 ≤ θ t')
+    (hφloc : ∀ t t' : ℝ, 3 ≤ t → |t' - t| ≤ 1 → φ t' ≤ 2 * φ t)
+    (hζ : ∀ (σ t : ℝ), 3 ≤ |t| → 1 - θ |t| ≤ σ → σ ≤ 2 → ‖riemannZeta (σ + t * Complex.I)‖ ≤ Real.exp (φ |t|)) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (ρ : ℂ), riemannZeta ρ = 0 → 6 ≤ |ρ.im| → ρ.re ≤ 1 - A * θ |ρ.im| / φ |ρ.im| := by
+  have _ := hθanti
+  have _ := hφmono
+  rcases neg_re_logDeriv_pole_bound with ⟨C₀, hC₀gt1, hC₀⟩
+  let C : ℝ := 3 * C₀ + 32 * K_geom + 3
+  have hKpos := K_geom_pos
+  have hCpos : 0 < C := by
+    dsimp [C]
+    positivity
+  have hC_gt1 : 1 < C := by
+    dsimp [C]
+    have : 3 * (1 : ℝ) < 3 * C₀ := by linarith
+    linarith
+  have hC_gt4 : 4 < C := by
+    dsimp [C]
+    have : 3 * (1 : ℝ) < 3 * C₀ := by linarith
+    have : 0 < 32 * K_geom := by positivity
+    linarith
+  apply zero_free_of_341_bound θ φ hθ hφ C hC_gt1
+  intro ρ hzero hρim hρre_pos hρre_lt1
+  let t := ρ.im
+  have ht_ge6 : 6 ≤ |t| := hρim
+  have ht_ge3 : 3 ≤ |t| := by linarith
+  have hθpos := (hθ |t| ht_ge3).1
+  have hθle := (hθ |t| ht_ge3).2
+  have hφge := hφ |t| ht_ge3
+  let L := φ |t| / θ |t|
+  have hLpos : 0 < L := div_pos (by linarith) hθpos
+  have hL_ge2 : 2 ≤ L := by
+    dsimp [L]
+    have h1 : (2 : ℝ) ≤ 1 / θ |t| := (le_div_iff₀ hθpos).mpr (by linarith)
+    have h2 : 1 / θ |t| ≤ φ |t| / θ |t| := div_le_div_of_nonneg_right hφge (le_of_lt hθpos)
+    exact le_trans h1 h2
+  let δ := 1 / (2 * C * L)
+  have hδ_pos : 0 < δ := by
+    dsimp [δ]
+    positivity
+  have hδ_eq : δ = θ |t| / (2 * C * φ |t|) := by
+    dsimp [δ, L]
+    have hCne : C ≠ 0 := ne_of_gt hCpos
+    have hφne : φ |t| ≠ 0 := ne_of_gt (by linarith)
+    have hθne : θ |t| ≠ 0 := ne_of_gt hθpos
+    field_simp
+  by_cases hcaseA : ρ.re ≤ 1 - θ |t| / 4
+  · have hden_ge : θ |t| / 4 ≤ 1 + δ - ρ.re := by linarith
+    have hden_pos : 0 < 1 + δ - ρ.re := by linarith
+    have hfrac_le : 4 / (1 + δ - ρ.re) ≤ 16 / θ |t| := by
+      have : 4 / (θ |t| / 4) = 16 / θ |t| := by ring
+      rw [← this]
+      exact div_le_div_of_nonneg_left (by norm_num) (by linarith) hden_ge
+    have h3δ : 3 / δ = 6 * C * L := by
+      dsimp [δ]
+      have hCne : C ≠ 0 := ne_of_gt hCpos
+      have hLne : L ≠ 0 := ne_of_gt hLpos
+      field_simp
+      ring
+    have h6CL_ge : 16 / θ |t| ≤ 6 * C * L := by
+      have hCL_ge : 6 * C * (1 / θ |t|) ≤ 6 * C * L := by
+        have : 1 / θ |t| ≤ φ |t| / θ |t| := by
+          exact div_le_div_of_nonneg_right hφge (le_of_lt hθpos)
+        exact mul_le_mul_of_nonneg_left this (by linarith)
+      have h16_le : 16 / θ |t| ≤ 6 * C * (1 / θ |t|) := by
+        have h16_36 : (16 : ℝ) ≤ 6 * C := by
+          dsimp [C]
+          linarith
+        have hinv_pos : 0 ≤ 1 / θ |t| := le_of_lt (one_div_pos.mpr hθpos)
+        have hmul := mul_le_mul_of_nonneg_right h16_36 hinv_pos
+        have h1 : 16 / θ |t| = 16 * (1 / θ |t|) := by ring
+        have h2 : 6 * C * (1 / θ |t|) = (6 * C) * (1 / θ |t|) := by ring
+        rw [h1, h2]
+        exact hmul
+      exact le_trans h16_le hCL_ge
+    have : 4 / (1 + δ - ρ.re) ≤ 3 / δ := by
+      rw [h3δ]
+      exact le_trans hfrac_le h6CL_ge
+    have hCL_nonneg : 0 ≤ C * L := by positivity
+    have h_res : 0 ≤ 3 / δ - 4 / (1 + δ - ρ.re) + C * L := by linarith
+    exact h_res
+  · push Not at hcaseA
+    set c_t : ℂ := (1 + θ |t| / 2 : ℝ) + t * Complex.I
+    set R1_t : ℝ := 3 * θ |t| / 4
+    have hR1_pos : 0 < R1_t := by dsimp [R1_t]; linarith
+    have hR1_lt1 : R1_t < 1 := by dsimp [R1_t]; linarith
+    have hc_re_gt1 : 1 < c_t.re := by dsimp [c_t]; simp; linarith
+    have hfin_t := zeros_finite_general c_t R1_t hR1_pos hR1_lt1 hc_re_gt1
+    set S_t := hfin_t.toFinset
+    have hρ_in_ball : ρ ∈ Metric.closedBall c_t R1_t := by
+      rw [Metric.mem_closedBall, dist_eq]
+      have h_diff : ρ - c_t = (((ρ.re - (1 + θ |t| / 2) : ℝ)) : ℂ) := by
+        apply Complex.ext <;> simp [c_t, t]
+      rw [h_diff, Complex.norm_real, Real.norm_eq_abs]
+      have h_re_le : |ρ.re - (1 + θ |t| / 2)| ≤ R1_t := by
+        rw [abs_le]
+        constructor
+        · dsimp [R1_t]
+          linarith
+        · dsimp [R1_t]
+          linarith
+      exact h_re_le
+    have hρ_in_S : ρ ∈ S_t := by
+      have h_mem : ρ ∈ zerosetKfRc R1_t c_t riemannZeta := ⟨hρ_in_ball, hzero⟩
+      exact Set.Finite.mem_toFinset hfin_t |>.mpr h_mem
+    set z1 : ℂ := (1 + δ) + t * Complex.I
+    have hz1_ball : z1 ∈ Metric.closedBall c_t (θ |t| / 2) := by
+      rw [Metric.mem_closedBall, dist_eq]
+      have h_diff : z1 - c_t = (((δ - θ |t| / 2 : ℝ)) : ℂ) := by
+        apply Complex.ext
+        · simp [z1, c_t]
+        · simp [z1, c_t]
+      rw [h_diff, Complex.norm_real, Real.norm_eq_abs]
+      have hδ_lt : δ < θ |t| / 2 := by
+        rw [hδ_eq]
+        have h_den : 2 < 2 * C * φ |t| := by
+          have : 1 < C * φ |t| := by nlinarith [hC_gt1, hφge]
+          linarith
+        exact (div_lt_iff₀ (by positivity)).mpr (by nlinarith [hθpos])
+      rw [abs_le]
+      constructor
+      · linarith
+      · linarith
+    have hz1_not_zero : riemannZeta z1 ≠ 0 := by
+      apply riemannZeta_ne_zero_of_one_lt_re
+      dsimp [z1]
+      simp
+      linarith
+    have hz1_not_S : z1 ∉ zerosetKfRc R1_t c_t riemannZeta := fun h => hz1_not_zero h.2
+    have hexp1 := logDerivZeta_expansion_bound θ φ hθ hφ hθloc hφloc hζ hθφ t ht_ge6 hfin_t z1 hz1_ball hz1_not_S
+    have hz1_zeros_re : ∀ ρ' ∈ S_t, ρ'.re < z1.re := by
+      intro ρ' hρ'
+      have hρ'_zero : riemannZeta ρ' = 0 := by
+        have : ρ' ∈ zerosetKfRc R1_t c_t riemannZeta := by
+          simpa [S_t] using hρ'
+        exact this.2
+      have hnot1 : ¬ (1 ≤ ρ'.re) := fun h => riemannZeta_ne_zero_of_one_le_re h hρ'_zero
+      push Not at hnot1
+      have : z1.re = 1 + δ := by simp [z1]
+      linarith
+    have hz1_im_eq : z1.im = ρ.im := by simp [z1, t]
+    have hm1 := analyticOrderAt_riemannZeta_ge_one ρ hzero hρim
+    have hZ1_bound := neg_re_logDeriv_le_single z1 ρ S_t (4 * K_geom * L) hexp1 hρ_in_S hz1_zeros_re hz1_im_eq hm1
+    have hz1_re_eq : z1.re = 1 + δ := by simp [z1]
+    rw [hz1_re_eq] at hZ1_bound
+    have hz1_def : z1 = (1 : ℂ) + δ + t * Complex.I := by
+      apply Complex.ext <;> simp [z1]
+    rw [hz1_def] at hZ1_bound
+    have h_abs_2t : |2 * t| = 2 * |t| := by
+      rw [abs_mul]
+      norm_num
+    have ht2_ge6 : 6 ≤ |2 * t| := by
+      rw [h_abs_2t]
+      linarith
+    have ht2_ge3 : 3 ≤ |2 * t| := by linarith
+    have hθ2t_pos : 0 < θ |2 * t| := (hθ |2 * t| ht2_ge3).1
+    set c_2t : ℂ := (1 + θ |2 * t| / 2 : ℝ) + (2 * t : ℝ) * Complex.I
+    set R1_2t : ℝ := 3 * θ |2 * t| / 4
+    have hR1_2t_pos : 0 < R1_2t := by dsimp [R1_2t]; linarith [hθ2t_pos]
+    have hR1_2t_lt1 : R1_2t < 1 := by dsimp [R1_2t]; have := (hθ |2 * t| ht2_ge3).2; linarith
+    have hc_2t_re : 1 < c_2t.re := by
+      have h_re : c_2t.re = 1 + θ |2 * t| / 2 := by
+        dsimp [c_2t]
+        simp
+      rw [h_re]
+      linarith [hθ2t_pos]
+    have hfin_2t := zeros_finite_general c_2t R1_2t hR1_2t_pos hR1_2t_lt1 hc_2t_re
+    set S_2t := hfin_2t.toFinset
+    set z2 : ℂ := (1 + δ) + (2 * t : ℝ) * Complex.I
+    have hz2_ball : z2 ∈ Metric.closedBall c_2t (θ |2 * t| / 2) := by
+      rw [Metric.mem_closedBall, dist_eq]
+      have h_diff : z2 - c_2t = (((δ - θ |2 * t| / 2 : ℝ)) : ℂ) := by
+        apply Complex.ext
+        · simp [z2, c_2t]
+        · simp [z2, c_2t]
+      rw [h_diff, Complex.norm_real, Real.norm_eq_abs]
+      have hδ_lt_2t : δ < θ |2 * t| / 2 := by
+        rw [hδ_eq]
+        have hθdy := hθdyadic |t| ht_ge3
+        have h4 : 4 < 2 * C * φ |t| := by nlinarith [hC_gt4, hφge]
+        have hstep1 : θ |t| / (2 * C * φ |t|) ≤ (2 * θ (2 * |t|)) / (2 * C * φ |t|) :=
+          div_le_div_of_nonneg_right hθdy (by positivity)
+        rw [← h_abs_2t] at hstep1
+        have hstep2 : (2 * θ |2 * t|) / (2 * C * φ |t|) < θ |2 * t| / 2 := by
+          have : (2 * θ |2 * t|) / (2 * C * φ |t|) < (2 * θ |2 * t|) / 4 :=
+            div_lt_div_of_pos_left (by linarith [hθ2t_pos]) (by norm_num) h4
+          have : (2 * θ |2 * t|) / (4 : ℝ) = θ |2 * t| / 2 := by ring
+          linarith
+        exact lt_of_le_of_lt hstep1 hstep2
+      rw [abs_le]
+      constructor
+      · linarith
+      · linarith
+    have hz2_not_zero : riemannZeta z2 ≠ 0 := by
+      apply riemannZeta_ne_zero_of_one_lt_re
+      dsimp [z2]
+      simp
+      linarith
+    have hz2_not_S : z2 ∉ zerosetKfRc R1_2t c_2t riemannZeta := fun h => hz2_not_zero h.2
+    have hexp2 := logDerivZeta_expansion_bound θ φ hθ hφ hθloc hφloc hζ hθφ (2 * t) ht2_ge6 hfin_2t z2 hz2_ball hz2_not_S
+    have herr2 := error_at_2t_le θ φ hθ hφ hφθ hθdyadic t ht_ge6
+    have hexp2_final : ‖logDerivZeta z2 - ∑ ρ ∈ S_2t, ((analyticOrderAt riemannZeta ρ).toNat : ℂ) / (z2 - ρ)‖ ≤
+        16 * K_geom * L := le_trans hexp2 herr2
+    have hz2_zeros_re : ∀ ρ' ∈ S_2t, ρ'.re < z2.re := by
+      intro ρ' hρ'
+      have hρ'_zero : riemannZeta ρ' = 0 := by
+        have : ρ' ∈ zerosetKfRc R1_2t c_2t riemannZeta := by
+          simpa [S_2t] using hρ'
+        exact this.2
+      have hnot1 : ¬ (1 ≤ ρ'.re) := fun h => riemannZeta_ne_zero_of_one_le_re h hρ'_zero
+      push Not at hnot1
+      have : z2.re = 1 + δ := by simp [z2]
+      linarith
+    have hZ2_bound := neg_re_logDeriv_le_of_nonneg z2 S_2t (16 * K_geom * L) hexp2_final hz2_zeros_re
+    have hz2_def : z2 = (1 : ℂ) + δ + (2 * t) * Complex.I := by
+      apply Complex.ext <;> simp [z2]
+    rw [hz2_def] at hZ2_bound
+    have hZ0_bound := hC₀ δ hδ_pos
+    have hcomb := trig_341_inequality_combine δ t hδ_pos ρ.re C₀ (4 * K_geom * L) (16 * K_geom * L)
+      hZ0_bound hZ1_bound hZ2_bound
+    have h_err_sum : 3 * C₀ + 4 * (4 * K_geom * L) + 16 * K_geom * L ≤ C * L := by
+      dsimp [C]
+      have h1 : 3 * C₀ ≤ 3 * C₀ * L := by
+        have : 3 * C₀ * 1 ≤ 3 * C₀ * L :=
+          mul_le_mul_of_nonneg_left (by linarith) (by linarith)
+        simpa using this
+      have h2 : 4 * (4 * K_geom * L) = 16 * K_geom * L := by ring
+      rw [h2]
+      have : 3 * C₀ + 16 * K_geom * L + 16 * K_geom * L = 3 * C₀ + 32 * K_geom * L := by ring
+      rw [this]
+      have : 3 * C₀ + 32 * K_geom * L ≤ (3 * C₀ + 32 * K_geom + 3) * L := by
+        have : (3 * C₀ + 32 * K_geom + 3) * L = 3 * C₀ * L + 32 * K_geom * L + 3 * L := by ring
+        rw [this]
+        linarith
+      exact this
+    have h_res : 0 ≤ 3 / δ - 4 / (1 + δ - ρ.re) + C * L := by linarith [hcomb, h_err_sum]
+    exact h_res
+
 end Erdos1201.MR.Vinogradov
 
 namespace Erdos1201.MR
@@ -870,6 +1397,7 @@ export Erdos1201.MR.Vinogradov (
   zero_free_of_341_bound
   zero_free_of_classical_subordinate
   zero_free_of_zeta_bound
+  zero_free_of_zeta_bound'
   zeta_analytic_on_closedBall_1
   log_Deriv_Expansion_Zeta_general
   zeros_finite_general
@@ -888,7 +1416,11 @@ export Erdos1201.MR.Vinogradov (
   one_le_zeta_ofReal
   one_le_norm_zeta_ofReal
   inv_norm_zeta_le_norm_zeta
+  norm_zeta_one_add_half_theta_le
+  inv_norm_zeta_center_le
   zeta_bound_on_disk_general
+  zeta_bound_on_disk_general'
+  log_B_div_norm_zeta_le
   re_div_zero_pos
   re_div_same_im
   re_sum_zeros_nonneg
@@ -900,6 +1432,9 @@ export Erdos1201.MR.Vinogradov (
   K_geom_pos
   geom_factor_eval
   geom_radii_bounds
+  logDerivZeta_expansion_bound
+  error_at_2t_le
+  analyticOrderAt_riemannZeta_ge_one
   neg_re_logDeriv_pole_bound
   trig_341_inequality_combine
 )
