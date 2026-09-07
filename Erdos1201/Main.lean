@@ -7,15 +7,15 @@ import Erdos1201.SmoothInput
 The original paper and proof are by Przemek Chojecki together with ChatGPT 5.5.
 This formalization in Lean 4 reproduces their deduction.
 
-This module exposes the final wrapper theorems:
+This module exposes the wrapper theorems with an explicit analytic hypothesis:
 - `Erdos1201.theorem1`: the upper density of the bad set tends to 0 as the block length
-  `h → ∞`, conditional on `QuantitativeShortIntervalInput` only.
-- `Erdos1201.erdos_problem_1201`: the statement of Erdős Problem #1201, conditional
-  on the same single explicit analytic input.
+  `h → ∞`, given `QuantitativeShortIntervalInput`.
+- `Erdos1201.erdos_problem_1201`: the statement of Erdős Problem #1201, given the same
+  single explicit analytic input.
 
-The smooth-number input used by the paper is discharged by `Erdos1201.smoothUpperInput`
-(see `Erdos1201.SmoothInput`), so the only remaining hypothesis is the quantitative
-Matomäki–Radziwiłł short-interval theorem.
+The smooth-number input used by the paper is proved by `Erdos1201.smoothUpperInput`
+(see `Erdos1201.SmoothInput`). The unconditional theorems, which prove the short-interval
+input for the smooth indicator instead of assuming it, are in `Erdos1201.Final`.
 -/
 
 open Filter

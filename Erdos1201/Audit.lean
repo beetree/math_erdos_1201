@@ -15,8 +15,8 @@ The modules under `Erdos1201.MR` formalize the Matomäki–Radziwiłł short-int
 This file audits the single final unconditional theorem
 (`Erdos1201.erdos_problem_1201_unconditional`) to verify that it depends strictly on standard
 Lean core axioms (`propext`, `Classical.choice`, `Quot.sound`) and introduces no `sorry`,
-`admit`, or custom axioms. The conditional form `Erdos1201.erdos_problem_1201` remains
-available as a corollary of the same deduction.
+`admit`, or custom axioms. The form with an explicit hypothesis, `Erdos1201.erdos_problem_1201`, is a corollary of
+the same deduction.
 Auxiliary lemmas and modules are compiled and verified as dependencies within the build,
 but are not individually axiom-audited by this single check.
 -/
