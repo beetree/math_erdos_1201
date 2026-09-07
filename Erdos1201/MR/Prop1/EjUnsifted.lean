@@ -1326,5 +1326,994 @@ theorem RangeSystem.integral_Tset_succ_le_unsifted_bridge {η : ℝ} (_hη0 : 0 
       dsimp [Err]
       ring
 
+lemma pow_eq_exp_log (x : ℝ) (n : ℕ) (hx : 0 < x) :
+    x ^ n = Real.exp ((n : ℝ) * Real.log x) := by
+  have : x ^ n = x ^ (n : ℝ) := (Real.rpow_natCast x n).symm
+  rw [this, Real.rpow_def_of_pos hx]
+  congr 1
+  ring
+
+lemma exp_one_pow (n : ℕ) : (Real.exp 1) ^ n = Real.exp (n : ℝ) := by
+  have : (Real.exp 1) ^ n = (Real.exp 1) ^ (n : ℝ) := by
+    exact (Real.rpow_natCast (Real.exp 1) n).symm
+  rw [this, ← Real.exp_mul]
+  ring_nf
+
+lemma log_add_one_le (ℓ : ℝ) (hℓ : 0 ≤ ℓ) :
+    Real.log (ℓ + 1) ≤ (1 / 4 : ℝ) * ℓ + 1 := by
+  have hpos : 0 < (ℓ + 1) / 4 := by positivity
+  have h1 := Real.log_le_sub_one_of_pos hpos
+  have hdiv : Real.log ((ℓ + 1) / 4) = Real.log (ℓ + 1) - Real.log 4 := by
+    rw [Real.log_div (by positivity) (by norm_num)]
+  rw [hdiv] at h1
+  have h4 : Real.log 4 = 2 * Real.log 2 := by
+    have : (4 : ℝ) = 2 * 2 := by norm_num
+    rw [this, Real.log_mul (by norm_num) (by norm_num)]
+    ring
+  have hlog2 := Real.log_two_lt_d9
+  linarith
+
+lemma eight_pow_mul_factorial_sq_le (ℓ : ℕ) (hℓ : 1 ≤ ℓ) :
+    (8 : ℝ) ^ ℓ * (((ℓ + 1).factorial : ℝ)) ^ 2 ≤
+      Real.exp (2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5) := by
+  have hℓ_pos : 0 < (ℓ : ℝ) := Nat.cast_pos.mpr (by omega)
+  have hℓ1_pos : 0 < (ℓ : ℝ) + 1 := by positivity
+  have hn : 1 ≤ ℓ + 1 := by omega
+  have h_st := factorial_le_stirling (ℓ + 1) hn
+  push_cast at h_st
+  have h_fact_nonneg : 0 ≤ ((ℓ + 1).factorial : ℝ) := by positivity
+  have h_st_nonneg : 0 ≤ Real.exp 1 * Real.sqrt ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1) := by positivity
+  have h_sq := mul_self_le_mul_self h_fact_nonneg h_st
+  have h_sq_pow : (((ℓ + 1).factorial : ℝ)) ^ 2 ≤ (Real.exp 1 * Real.sqrt ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2 := by
+    calc (((ℓ + 1).factorial : ℝ)) ^ 2
+      _ = ((ℓ + 1).factorial : ℝ) * ((ℓ + 1).factorial : ℝ) := by ring
+      _ ≤ (Real.exp 1 * Real.sqrt ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) *
+          (Real.exp 1 * Real.sqrt ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) := h_sq
+      _ = (Real.exp 1 * Real.sqrt ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2 := by ring
+  have h_split_sq : (Real.exp 1 * Real.sqrt ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2 =
+      ((Real.exp 1) ^ 2 * ((ℓ : ℝ) + 1)) * ((((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2 := by
+    have h_sqrt_sq : (Real.sqrt ((ℓ : ℝ) + 1)) ^ 2 = (ℓ : ℝ) + 1 := Real.sq_sqrt (by positivity)
+    calc (Real.exp 1 * Real.sqrt ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2
+      _ = (Real.exp 1) ^ 2 * (Real.sqrt ((ℓ : ℝ) + 1)) ^ 2 * ((((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2 := by ring
+      _ = ((Real.exp 1) ^ 2 * ((ℓ : ℝ) + 1)) * ((((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2 := by rw [h_sqrt_sq]
+  rw [h_split_sq] at h_sq_pow
+  have h_pow_div : ((((ℓ : ℝ) + 1) / Real.exp 1) ^ (ℓ + 1)) ^ 2 = (((ℓ : ℝ) + 1) ^ (ℓ + 1)) ^ 2 / ((Real.exp 1) ^ (ℓ + 1)) ^ 2 := by
+    rw [div_pow, div_pow]
+  have h_exp_denom : ((Real.exp 1) ^ (ℓ + 1)) ^ 2 = Real.exp (2 * ((ℓ : ℝ) + 1)) := by
+    rw [← pow_mul, exp_one_pow]
+    push_cast
+    ring_nf
+  have h_num_pow : (((ℓ : ℝ) + 1) ^ (ℓ + 1)) ^ 2 = ((ℓ : ℝ) + 1) ^ (2 * (ℓ + 1)) := by
+    rw [← pow_mul]
+    congr 1
+    ring
+  rw [h_pow_div, h_exp_denom, h_num_pow] at h_sq_pow
+  have h_exp_sq : (Real.exp 1) ^ 2 = Real.exp 2 := by
+    have := exp_one_pow 2
+    exact_mod_cast this
+  have h_prod_pow : ((ℓ : ℝ) + 1) * ((ℓ : ℝ) + 1) ^ (2 * (ℓ + 1)) = ((ℓ : ℝ) + 1) ^ (2 * ℓ + 3) := by
+    have h_exp_eq : 2 * (ℓ + 1) + 1 = 2 * ℓ + 3 := by omega
+    rw [mul_comm, ← pow_succ, h_exp_eq]
+  have h_fact_sq_le : (((ℓ + 1).factorial : ℝ)) ^ 2 ≤
+      Real.exp (- 2 * (ℓ : ℝ)) * ((ℓ : ℝ) + 1) ^ (2 * ℓ + 3) := by
+    calc (((ℓ + 1).factorial : ℝ)) ^ 2
+      _ ≤ ((Real.exp 1) ^ 2 * ((ℓ : ℝ) + 1)) * (((ℓ : ℝ) + 1) ^ (2 * (ℓ + 1)) / Real.exp (2 * ((ℓ : ℝ) + 1))) := h_sq_pow
+      _ = (Real.exp 2 * (Real.exp (2 * ((ℓ : ℝ) + 1)))⁻¹) * (((ℓ : ℝ) + 1) * ((ℓ : ℝ) + 1) ^ (2 * (ℓ + 1))) := by
+        rw [h_exp_sq, div_eq_mul_inv]
+        ring
+      _ = (Real.exp 2 * Real.exp (- (2 * ((ℓ : ℝ) + 1)))) * ((ℓ : ℝ) + 1) ^ (2 * ℓ + 3) := by
+        rw [← Real.exp_neg, h_prod_pow]
+      _ = Real.exp (2 + - (2 * ((ℓ : ℝ) + 1))) * ((ℓ : ℝ) + 1) ^ (2 * ℓ + 3) := by
+        rw [← Real.exp_add]
+      _ = Real.exp (- 2 * (ℓ : ℝ)) * ((ℓ : ℝ) + 1) ^ (2 * ℓ + 3) := by
+        congr 2
+        ring
+  have h_pow_eq : ((ℓ : ℝ) + 1) ^ (2 * ℓ + 3) = Real.exp ((2 * (ℓ : ℝ) + 3) * Real.log ((ℓ : ℝ) + 1)) := by
+    have := pow_eq_exp_log ((ℓ : ℝ) + 1) (2 * ℓ + 3) hℓ1_pos
+    push_cast at this
+    exact this
+  have h8_eq : (8 : ℝ) ^ ℓ = Real.exp ((ℓ : ℝ) * Real.log 8) := by
+    have : (8 : ℝ) ^ ℓ = (8 : ℝ) ^ (ℓ : ℝ) := (Real.rpow_natCast 8 ℓ).symm
+    rw [this, Real.rpow_def_of_pos (by norm_num)]
+    congr 1
+    ring
+  have h_main_prod : (8 : ℝ) ^ ℓ * (((ℓ + 1).factorial : ℝ)) ^ 2 ≤
+      Real.exp ((ℓ : ℝ) * Real.log 8 - 2 * (ℓ : ℝ) + (2 * (ℓ : ℝ) + 3) * Real.log ((ℓ : ℝ) + 1)) := by
+    calc (8 : ℝ) ^ ℓ * (((ℓ + 1).factorial : ℝ)) ^ 2
+      _ ≤ Real.exp ((ℓ : ℝ) * Real.log 8) * (Real.exp (- 2 * (ℓ : ℝ)) * ((ℓ : ℝ) + 1) ^ (2 * ℓ + 3)) := by
+        rw [h8_eq]
+        exact mul_le_mul_of_nonneg_left h_fact_sq_le (by positivity)
+      _ = Real.exp ((ℓ : ℝ) * Real.log 8) * Real.exp (- 2 * (ℓ : ℝ)) * Real.exp ((2 * (ℓ : ℝ) + 3) * Real.log ((ℓ : ℝ) + 1)) := by
+        rw [h_pow_eq]
+        ring
+      _ = Real.exp ((ℓ : ℝ) * Real.log 8 - 2 * (ℓ : ℝ) + (2 * (ℓ : ℝ) + 3) * Real.log ((ℓ : ℝ) + 1)) := by
+        rw [← Real.exp_add, ← Real.exp_add]
+        congr 1
+        ring
+  have h_log_split : Real.log ((ℓ : ℝ) + 1) = Real.log (ℓ : ℝ) + Real.log (1 + 1 / (ℓ : ℝ)) := by
+    have h_prod : (ℓ : ℝ) + 1 = (ℓ : ℝ) * (1 + 1 / (ℓ : ℝ)) := by
+      rw [mul_add, mul_one]
+      have : (ℓ : ℝ) * (1 / (ℓ : ℝ)) = 1 := mul_one_div_cancel hℓ_pos.ne'
+      rw [this]
+    rw [h_prod, Real.log_mul hℓ_pos.ne' (by positivity)]
+  have h_log_sub : Real.log (1 + 1 / (ℓ : ℝ)) ≤ 1 / (ℓ : ℝ) := by
+    have := Real.log_le_sub_one_of_pos (show 0 < 1 + 1 / (ℓ : ℝ) by positivity)
+    linarith
+  have h_log8 : Real.log 8 ≤ 2.08 := by
+    have h8 : (8 : ℝ) = 4 * 2 := by norm_num
+    have h4 : (4 : ℝ) = 2 * 2 := by norm_num
+    rw [h8, Real.log_mul (by norm_num) (by norm_num), h4, Real.log_mul (by norm_num) (by norm_num)]
+    have hlog2 := Real.log_two_lt_d9
+    linarith
+  have h_log_add1 : Real.log ((ℓ : ℝ) + 1) ≤ (1 / 4 : ℝ) * (ℓ : ℝ) + 1 := log_add_one_le (ℓ : ℝ) (by positivity)
+  have h_exp_bound : (ℓ : ℝ) * Real.log 8 - 2 * (ℓ : ℝ) + (2 * (ℓ : ℝ) + 3) * Real.log ((ℓ : ℝ) + 1) ≤
+      2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5 := by
+    have h_decomp : (2 * (ℓ : ℝ) + 3) * Real.log ((ℓ : ℝ) + 1) =
+        2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + 2 * (ℓ : ℝ) * Real.log (1 + 1 / (ℓ : ℝ)) + 3 * Real.log ((ℓ : ℝ) + 1) := by
+      rw [h_log_split]
+      ring
+    rw [h_decomp]
+    have h_term1 : 2 * (ℓ : ℝ) * Real.log (1 + 1 / (ℓ : ℝ)) ≤ 2 := by
+      calc 2 * (ℓ : ℝ) * Real.log (1 + 1 / (ℓ : ℝ))
+        _ ≤ 2 * (ℓ : ℝ) * (1 / (ℓ : ℝ)) := mul_le_mul_of_nonneg_left h_log_sub (by positivity)
+        _ = 2 * ((ℓ : ℝ) * (1 / (ℓ : ℝ))) := by ring
+        _ = 2 * 1 := by rw [mul_one_div_cancel hℓ_pos.ne']
+        _ = 2 := by ring
+    have h_term2 : (ℓ : ℝ) * Real.log 8 - 2 * (ℓ : ℝ) ≤ 0.08 * (ℓ : ℝ) := by
+      calc (ℓ : ℝ) * Real.log 8 - 2 * (ℓ : ℝ)
+        _ = (ℓ : ℝ) * (Real.log 8 - 2) := by ring
+        _ ≤ (ℓ : ℝ) * 0.08 := mul_le_mul_of_nonneg_left (by linarith) hℓ_pos.le
+        _ = 0.08 * (ℓ : ℝ) := by ring
+    have h_term3 : 3 * Real.log ((ℓ : ℝ) + 1) ≤ 3 * ((1 / 4 : ℝ) * (ℓ : ℝ) + 1) :=
+      mul_le_mul_of_nonneg_left h_log_add1 (by norm_num)
+    linarith
+  exact h_main_prod.trans (Real.exp_le_exp.mpr h_exp_bound)
+
+lemma real_exponent_linear_bound (E_1 E_2 : ℝ)
+    (v : ℝ) (logPj logQi loglogQj : ℝ) (delta : ℝ)
+    (hdelta_pos : 0 < delta) (hdelta_le : delta ≤ 1 / 24)
+    (hlogQi_nonneg : 0 ≤ logQi)
+    (hE1 : E_1 ≤ - delta * v + (1 / 2) * logQi + 1 / 4)
+    (hE2 : E_2 ≤ 2 * ((107 / 400 : ℝ) * delta * v + loglogQj + 2) + ((1 / 8 : ℝ) * delta * v + 1) + 5)
+    (hv : logPj - 1 / 2 ≤ v)
+    (hPj : (8 / delta) * logQi ≤ logPj)
+    (hloglog : loglogQj ≤ (1 / 96 : ℝ) * logQi) :
+    E_1 + E_2 ≤ - (215 / 100 : ℝ) * logQi + 12 := by
+  have h_coeff : - delta + 2 * (107 / 400 : ℝ) * delta + (1 / 8 : ℝ) * delta = - (34 / 100 : ℝ) * delta := by ring
+  have hE : E_1 + E_2 ≤ - (34 / 100 : ℝ) * delta * v + (1 / 2) * logQi + 2 * loglogQj + 41 / 4 := by
+    linarith [hE1, hE2]
+  have h_v_bound : - (34 / 100 : ℝ) * delta * v ≤ - (34 / 100 : ℝ) * delta * logPj + (34 / 100 : ℝ) * delta * (1 / 2) := by
+    have : (34 / 100 : ℝ) * delta * (logPj - 1 / 2) ≤ (34 / 100 : ℝ) * delta * v :=
+      mul_le_mul_of_nonneg_left hv (by positivity)
+    linarith
+  have h_Pj_bound : - (34 / 100 : ℝ) * delta * logPj ≤ - (272 / 100 : ℝ) * logQi := by
+    have h_cancel : (34 / 100 : ℝ) * delta * ((8 / delta) * logQi) = (272 / 100 : ℝ) * logQi := by
+      have : (34 / 100 : ℝ) * delta * ((8 / delta) * logQi) = ((34 / 100 : ℝ) * 8 * (delta * (1 / delta))) * logQi := by ring
+      rw [this, mul_one_div_cancel hdelta_pos.ne']
+      ring
+    have h_mul : (34 / 100 : ℝ) * delta * ((8 / delta) * logQi) ≤ (34 / 100 : ℝ) * delta * logPj :=
+      mul_le_mul_of_nonneg_left hPj (by positivity)
+    rw [h_cancel] at h_mul
+    linarith
+  have h_half_bound : (34 / 100 : ℝ) * delta * (1 / 2) ≤ 1 / 48 := by
+    calc (34 / 100 : ℝ) * delta * (1 / 2)
+      _ ≤ 1 * (1 / 24 : ℝ) * (1 / 2) := by
+        have : (34 / 100 : ℝ) ≤ 1 := by norm_num
+        nlinarith
+      _ = 1 / 48 := by norm_num
+  have h_sum_logQi : - (272 / 100 : ℝ) * logQi + (1 / 2) * logQi + 2 * (1 / 96 : ℝ) * logQi ≤ - (215 / 100 : ℝ) * logQi := by
+    have h_c : - (272 / 100 : ℝ) + 1 / 2 + 2 * (1 / 96 : ℝ) ≤ - (215 / 100 : ℝ) := by norm_num
+    calc - (272 / 100 : ℝ) * logQi + (1 / 2) * logQi + 2 * (1 / 96 : ℝ) * logQi
+      _ = (- (272 / 100 : ℝ) + 1 / 2 + 2 * (1 / 96 : ℝ)) * logQi := by ring
+      _ ≤ - (215 / 100 : ℝ) * logQi := mul_le_mul_of_nonneg_right h_c hlogQi_nonneg
+  linarith [hE, h_v_bound, h_Pj_bound, h_half_bound, hloglog, h_sum_logQi]
+
+lemma four_le_log_Q {Q : ℝ} (hQ_gt1 : 1 < Q) (hQ : 2 ≤ Real.log (Real.log Q)) : 4 ≤ Real.log Q := by
+  have hlogQ_pos : 0 < Real.log Q := Real.log_pos hQ_gt1
+  have hlog2 := Real.log_two_lt_d9
+  have hlog4 : Real.log 4 < 2 := by
+    have h4 : (4 : ℝ) = 2 * 2 := by norm_num
+    rw [h4, Real.log_mul (by norm_num) (by norm_num)]
+    linarith
+  have h_exp := Real.exp_le_exp.mpr (hlog4.le.trans hQ)
+  rw [Real.exp_log (by norm_num), Real.exp_log hlogQ_pos] at h_exp
+  exact h_exp
+
+lemma log_log_Q_add_half_le {Q : ℝ} (hQ_gt1 : 1 < Q) (hQ : 2 ≤ Real.log (Real.log Q)) :
+    Real.log (Real.log Q + 1 / 2) ≤ (107 / 100 : ℝ) * Real.log (Real.log Q) := by
+  have hlogQ_pos : 0 < Real.log Q := Real.log_pos hQ_gt1
+  have h4 := four_le_log_Q hQ_gt1 hQ
+  have h_prod : Real.log Q + 1 / 2 = Real.log Q * (1 + 1 / (2 * Real.log Q)) := by
+    rw [mul_add, mul_one]
+    have : Real.log Q * (1 / (2 * Real.log Q)) = 1 / 2 := by
+      field_simp [hlogQ_pos.ne']
+    rw [this]
+  have h_pos_term : 0 < 1 + 1 / (2 * Real.log Q) := by positivity
+  rw [h_prod, Real.log_mul hlogQ_pos.ne' h_pos_term.ne']
+  have h_sub := Real.log_le_sub_one_of_pos h_pos_term
+  have : 1 + 1 / (2 * Real.log Q) - 1 = 1 / (2 * Real.log Q) := by ring
+  rw [this] at h_sub
+  have h_inv : 1 / (2 * Real.log Q) ≤ 1 / 8 := by
+    have h_denom : 8 ≤ 2 * Real.log Q := by linarith
+    exact one_div_le_one_div_of_le (by norm_num) h_denom
+  have h_7 : (1 : ℝ) / 8 ≤ (7 / 100 : ℝ) * Real.log (Real.log Q) := by
+    calc (1 : ℝ) / 8 ≤ (7 / 100 : ℝ) * 2 := by norm_num
+      _ ≤ (7 / 100 : ℝ) * Real.log (Real.log Q) := mul_le_mul_of_nonneg_left hQ (by norm_num)
+  linarith
+
+lemma cond2_consequences {J : ℕ} {η : ℝ} (S : RangeSystem J η) (_hJ : 0 < J)
+    (hη0 : 0 < η) (hη : η < 1 / 6) (j i : Fin J) (hij : i.val + 1 = j.val)
+    (hPi : 2 ≤ Real.log (S.P i)) (hloglogQj : 2 ≤ Real.log (Real.log (S.Q j))) :
+    let j' : ℝ := ((j.val + 1 : ℕ) : ℝ)
+    Real.log (Real.log (S.Q j)) / (Real.log (S.P i) - 1) ≤ η / (4 * j'^2) ∧
+    1 / (Real.log (S.P i) - 1) ≤ η / (8 * j'^2) ∧
+    Real.log (Real.log (S.Q j)) ≤ (1 / 96) * Real.log (S.Q i) := by
+  intro j'
+  have hj' : (2 : ℝ) ≤ ((j.val + 1 : ℕ) : ℝ) := by
+    have : 2 ≤ j.val + 1 := by omega
+    exact_mod_cast this
+  have hj'2 : 4 ≤ j'^2 := by
+    change (2 : ℝ) ≤ j' at hj'
+    nlinarith
+  have hcond2 := S.cond2 j i hij
+  have hPi1 : 1 ≤ Real.log (S.P i) - 1 := by linarith
+  have hPi1_pos : 0 < Real.log (S.P i) - 1 := by linarith
+  have h1 : Real.log (Real.log (S.Q j)) / (Real.log (S.P i) - 1) ≤ η / (4 * j'^2) := hcond2
+  have h2 : 1 / (Real.log (S.P i) - 1) ≤ η / (8 * j'^2) := by
+    calc 1 / (Real.log (S.P i) - 1)
+      _ = (1 / 2) * (2 / (Real.log (S.P i) - 1)) := by ring
+      _ ≤ (1 / 2) * (Real.log (Real.log (S.Q j)) / (Real.log (S.P i) - 1)) := by
+        have : 2 / (Real.log (S.P i) - 1) ≤ Real.log (Real.log (S.Q j)) / (Real.log (S.P i) - 1) :=
+          div_le_div_of_nonneg_right hloglogQj hPi1_pos.le
+        linarith
+      _ ≤ (1 / 2) * (η / (4 * j'^2)) := mul_le_mul_of_nonneg_left hcond2 (by norm_num)
+      _ = η / (8 * j'^2) := by ring
+  have h3 : Real.log (Real.log (S.Q j)) ≤ (1 / 96) * Real.log (S.Q i) := by
+    have h_loglog_le : Real.log (Real.log (S.Q j)) ≤ (η / (4 * j'^2)) * (Real.log (S.P i) - 1) := by
+      rw [div_le_iff₀ hPi1_pos] at hcond2
+      exact hcond2
+    have h_coeff : η / (4 * j'^2) ≤ 1 / 96 := by
+      have h_num : η / (4 * j'^2) ≤ (1 / 6) / (4 * j'^2) :=
+        div_le_div_of_nonneg_right hη.le (by positivity)
+      have h_den : (1 / 6) / (4 * j'^2) ≤ 1 / 96 := by
+        have h_step : (1 / 6 : ℝ) / (4 * j'^2) ≤ (1 / 6 : ℝ) / (4 * 4) :=
+          div_le_div_of_nonneg_left (by norm_num) (by norm_num) (by nlinarith)
+        have h_eval : (1 / 6 : ℝ) / (4 * 4) = 1 / 96 := by norm_num
+        rwa [h_eval] at h_step
+      exact h_num.trans h_den
+    have hPi_pos : (0 : ℝ) < S.P i := Nat.cast_pos.mpr (by linarith [S.two_le_P i])
+    have hPi_le_Qi : (S.P i : ℝ) ≤ S.Q i := by exact_mod_cast (S.P_le_Q i)
+    have h_logPi_le : Real.log (S.P i) ≤ Real.log (S.Q i) := Real.log_le_log hPi_pos hPi_le_Qi
+    have h_sub_le : Real.log (S.P i) - 1 ≤ Real.log (S.Q i) := by linarith
+    calc Real.log (Real.log (S.Q j))
+      _ ≤ (η / (4 * j'^2)) * (Real.log (S.P i) - 1) := h_loglog_le
+      _ ≤ (1 / 96) * (Real.log (S.P i) - 1) := mul_le_mul_of_nonneg_right h_coeff (by linarith)
+      _ ≤ (1 / 96) * Real.log (S.Q i) := mul_le_mul_of_nonneg_left h_sub_le (by norm_num)
+  exact ⟨h1, h2, h3⟩
+
+lemma ell_log_ell_le {v r : ℕ} {H Hi : ℝ} {Q : ℝ}
+    (hQ_gt1 : 1 < Q) (hloglogQ : 2 ≤ Real.log (Real.log Q))
+    (hr_pos : 0 < (r : ℝ) / Hi) (hr_ge1 : 1 ≤ (r : ℝ) / Hi)
+    (hv_pos : 0 < (v : ℝ) / H) (hv_le : (v : ℝ) / H ≤ Real.log Q + 1 / 2) :
+    let x := ((v : ℝ) / H) / ((r : ℝ) / Hi)
+    let ℓ := ell v r H Hi
+    (ℓ : ℝ) * Real.log (ℓ : ℝ) ≤ x * Real.log x + Real.log (Real.log Q) + 2 := by
+  intro x ℓ
+  have hx_pos : 0 < x := div_pos hv_pos hr_pos
+  have hx_le : x ≤ Real.log Q + 1 / 2 := by
+    calc x = ((v : ℝ) / H) / ((r : ℝ) / Hi) := rfl
+      _ ≤ ((v : ℝ) / H) / 1 := div_le_div_of_nonneg_left hv_pos.le (by norm_num) hr_ge1
+      _ = (v : ℝ) / H := by ring
+      _ ≤ Real.log Q + 1 / 2 := hv_le
+  have hℓ_ge1 : 1 ≤ ℓ := one_le_ell hv_pos hr_pos
+  have hℓ_ge1_r : (1 : ℝ) ≤ (ℓ : ℝ) := by exact_mod_cast hℓ_ge1
+  have hℓ_pos : 0 < (ℓ : ℝ) := by positivity
+  have hℓ_le : (ℓ : ℝ) ≤ x + 1 := ell_le_add_one hr_pos hv_pos.le
+  have hlogℓ_le : Real.log (ℓ : ℝ) ≤ Real.log (x + 1) :=
+    Real.log_le_log hℓ_pos (hℓ_le.trans (by linarith))
+  have hlogℓ_nonneg : 0 ≤ Real.log (ℓ : ℝ) := Real.log_nonneg hℓ_ge1_r
+  have h_mul_le : (ℓ : ℝ) * Real.log (ℓ : ℝ) ≤ (x + 1) * Real.log (x + 1) :=
+    mul_le_mul hℓ_le hlogℓ_le hlogℓ_nonneg (by positivity)
+  have h_split : (x + 1) * Real.log (x + 1) = x * Real.log (x + 1) + Real.log (x + 1) := by ring
+  have h_log_x1 : Real.log (x + 1) = Real.log x + Real.log (1 + 1 / x) := by
+    have : x + 1 = x * (1 + 1 / x) := by
+      rw [mul_add, mul_one, mul_one_div_cancel hx_pos.ne']
+    rw [this, Real.log_mul hx_pos.ne' (by positivity)]
+  have h_x_log : x * Real.log (x + 1) ≤ x * Real.log x + 1 := by
+    rw [h_log_x1, mul_add]
+    have h_sub := Real.log_le_sub_one_of_pos (show 0 < 1 + 1 / x by positivity)
+    have : 1 + 1 / x - 1 = 1 / x := by ring
+    rw [this] at h_sub
+    have : x * Real.log (1 + 1 / x) ≤ x * (1 / x) := mul_le_mul_of_nonneg_left h_sub hx_pos.le
+    rw [mul_one_div_cancel hx_pos.ne'] at this
+    linarith
+  have h_log_x1_bound : Real.log (x + 1) ≤ Real.log (Real.log Q) + 1 := by
+    have hx1 : x + 1 ≤ Real.log Q + 3 / 2 := by linarith
+    have hx1_pos : 0 < x + 1 := by positivity
+    have h_log_le : Real.log (x + 1) ≤ Real.log (Real.log Q + 3 / 2) :=
+      Real.log_le_log hx1_pos hx1
+    have hlogQ_pos : 0 < Real.log Q := Real.log_pos hQ_gt1
+    have hlog2 := Real.log_two_lt_d9
+    have hlog4 : Real.log 4 < 2 := by
+      have h4 : (4 : ℝ) = 2 * 2 := by norm_num
+      rw [h4, Real.log_mul (by norm_num) (by norm_num)]
+      linarith
+    have h_exp := Real.exp_le_exp.mpr (hlog4.le.trans hloglogQ)
+    rw [Real.exp_log (by norm_num), Real.exp_log hlogQ_pos] at h_exp
+    have h4 : 4 ≤ Real.log Q := h_exp
+    have h_prod : Real.log Q + 3 / 2 = Real.log Q * (1 + 3 / (2 * Real.log Q)) := by
+      rw [mul_add, mul_one]
+      have : Real.log Q * (3 / (2 * Real.log Q)) = 3 / 2 := by
+        field_simp [hlogQ_pos.ne']
+      rw [this]
+    have h_pos_term : 0 < 1 + 3 / (2 * Real.log Q) := by positivity
+    have h_decomp : Real.log (Real.log Q + 3 / 2) = Real.log (Real.log Q) + Real.log (1 + 3 / (2 * Real.log Q)) := by
+      rw [h_prod, Real.log_mul hlogQ_pos.ne' h_pos_term.ne']
+    rw [h_decomp] at h_log_le
+    have h_sub := Real.log_le_sub_one_of_pos h_pos_term
+    have : 1 + 3 / (2 * Real.log Q) - 1 = 3 / (2 * Real.log Q) := by ring
+    rw [this] at h_sub
+    have h_inv : 3 / (2 * Real.log Q) ≤ 1 := by
+      rw [div_le_one (by linarith)]
+      linarith
+    linarith
+  linarith
+
+lemma x_log_x_le {v : ℕ} {H : ℝ} {Q : ℝ} {r_div_Hi : ℝ} {logPi_sub1 : ℝ} {η j' : ℝ}
+    (hQ_gt1 : 1 < Q) (hloglogQ : 2 ≤ Real.log (Real.log Q))
+    (hr_ge : logPi_sub1 ≤ r_div_Hi) (hr_ge1 : 1 ≤ r_div_Hi)
+    (hPi1_pos : 0 < logPi_sub1)
+    (hv_pos : 0 < (v : ℝ) / H) (hv_le : (v : ℝ) / H ≤ Real.log Q + 1 / 2)
+    (hcond2 : Real.log (Real.log Q) / logPi_sub1 ≤ η / (4 * j'^2)) :
+    let x := ((v : ℝ) / H) / r_div_Hi
+    x * Real.log x ≤ (107 / 400 : ℝ) * (η / j'^2) * ((v : ℝ) / H) := by
+  intro x
+  have hr_pos : 0 < r_div_Hi := by linarith
+  have hx_pos : 0 < x := div_pos hv_pos hr_pos
+  have hx_le : x ≤ Real.log Q + 1 / 2 := by
+    calc x = ((v : ℝ) / H) / r_div_Hi := rfl
+      _ ≤ ((v : ℝ) / H) / 1 := div_le_div_of_nonneg_left hv_pos.le (by norm_num) hr_ge1
+      _ = (v : ℝ) / H := by ring
+      _ ≤ Real.log Q + 1 / 2 := hv_le
+  have h_log_x : Real.log x ≤ (107 / 100 : ℝ) * Real.log (Real.log Q) := by
+    have h1 : Real.log x ≤ Real.log (Real.log Q + 1 / 2) := Real.log_le_log hx_pos hx_le
+    have h2 := log_log_Q_add_half_le hQ_gt1 hloglogQ
+    exact h1.trans h2
+  have hx_div : x ≤ ((v : ℝ) / H) / logPi_sub1 :=
+    div_le_div_of_nonneg_left hv_pos.le hPi1_pos hr_ge
+  have h_mul : x * Real.log x ≤ (((v : ℝ) / H) / logPi_sub1) * ((107 / 100 : ℝ) * Real.log (Real.log Q)) := by
+    by_cases hlogx : Real.log x ≤ 0
+    · have : x * Real.log x ≤ 0 := mul_nonpos_of_nonneg_of_nonpos hx_pos.le hlogx
+      have : 0 ≤ (((v : ℝ) / H) / logPi_sub1) * ((107 / 100 : ℝ) * Real.log (Real.log Q)) := by positivity
+      linarith
+    · have hlogx_pos : 0 ≤ Real.log x := by linarith
+      exact mul_le_mul hx_div h_log_x hlogx_pos (by positivity)
+  have h_alg : (((v : ℝ) / H) / logPi_sub1) * ((107 / 100 : ℝ) * Real.log (Real.log Q)) =
+      (107 / 100 : ℝ) * ((v : ℝ) / H) * (Real.log (Real.log Q) / logPi_sub1) := by ring
+  rw [h_alg] at h_mul
+  have h_term : (107 / 100 : ℝ) * ((v : ℝ) / H) * (Real.log (Real.log Q) / logPi_sub1) ≤
+      (107 / 100 : ℝ) * ((v : ℝ) / H) * (η / (4 * j'^2)) := by
+    have : 0 ≤ (107 / 100 : ℝ) * ((v : ℝ) / H) := by positivity
+    exact mul_le_mul_of_nonneg_left hcond2 this
+  have h_ring : (107 / 100 : ℝ) * ((v : ℝ) / H) * (η / (4 * j'^2)) =
+      (107 / 400 : ℝ) * (η / j'^2) * ((v : ℝ) / H) := by ring
+  rw [h_ring] at h_term
+  exact h_mul.trans h_term
+
+lemma total_exp_bound {J : ℕ} {η : ℝ} (S : RangeSystem J η) (hJ : 0 < J)
+    (hη0 : 0 < η) (hη : η < 1 / 6) (j i : Fin J) (hij : i.val + 1 = j.val)
+    (v r : ℕ) (hv : v ∈ S.Ij hJ j) (hr : r ∈ S.Ij hJ i)
+    (hHj : 2 ≤ S.Hj hJ j) (hHi : 2 ≤ S.Hj hJ i)
+    (hPj : 2 ≤ Real.log (S.P j)) (hPi : 2 ≤ Real.log (S.P i))
+    (hloglogQj : 2 ≤ Real.log (Real.log (S.Q j))) :
+    let H := S.Hj hJ j;
+    let Hi := S.Hj hJ i;
+    let ℓ := ell v r H Hi;
+    -2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi +
+      (2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5) ≤
+      - (215 / 100 : ℝ) * Real.log (S.Q i) + 12 := by
+  intro H Hi ℓ
+  let j' : ℝ := ((j.val + 1 : ℕ) : ℝ)
+  have hj' : (2 : ℝ) ≤ j' := by
+    change (2 : ℝ) ≤ ((j.val + 1 : ℕ) : ℝ)
+    exact_mod_cast (by omega : 2 ≤ j.val + 1)
+  have hj'2 : 4 ≤ j'^2 := by nlinarith
+  have hH_pos : 0 < H := by linarith
+  have hHi_pos : 0 < Hi := by linarith
+  have hr_div_ge : Real.log (S.P i) - 1 / Hi ≤ (r : ℝ) / Hi := by
+    unfold RangeSystem.Ij at hr
+    rw [Finset.mem_Icc] at hr
+    have hr1 : ⌊Hi * Real.log (S.P i)⌋₊ ≤ r := hr.1
+    have hr_cast : (⌊Hi * Real.log (S.P i)⌋₊ : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr1
+    have hfloor : Hi * Real.log (S.P i) - 1 ≤ (⌊Hi * Real.log (S.P i)⌋₊ : ℝ) :=
+      (Nat.sub_one_lt_floor (Hi * Real.log (S.P i))).le
+    have hr_le : Hi * Real.log (S.P i) - 1 ≤ (r : ℝ) := hfloor.trans hr_cast
+    have h1 : (Hi * Real.log (S.P i) - 1) / Hi ≤ (r : ℝ) / Hi :=
+      div_le_div_of_nonneg_right hr_le (le_of_lt hHi_pos)
+    rw [sub_div, mul_div_cancel_left₀ _ hHi_pos.ne'] at h1
+    exact h1
+  have h_inv_Hi : 1 / Hi ≤ 1 / 2 := one_div_le_one_div_of_le (by norm_num) hHi
+  have hr_ge1 : 1 ≤ (r : ℝ) / Hi := by linarith
+  have hr_pos : 0 < (r : ℝ) / Hi := by linarith
+  have hr_ge_sub1 : Real.log (S.P i) - 1 ≤ (r : ℝ) / Hi := by linarith
+  have hPi1_pos : 0 < Real.log (S.P i) - 1 := by linarith
+  have hv_div_ge : Real.log (S.P j) - 1 / 2 ≤ (v : ℝ) / H := by
+    unfold RangeSystem.Ij at hv
+    rw [Finset.mem_Icc] at hv
+    have hv1 : ⌊H * Real.log (S.P j)⌋₊ ≤ v := hv.1
+    have hv_cast : (⌊H * Real.log (S.P j)⌋₊ : ℝ) ≤ (v : ℝ) := by exact_mod_cast hv1
+    have hfloor : H * Real.log (S.P j) - 1 ≤ (⌊H * Real.log (S.P j)⌋₊ : ℝ) :=
+      (Nat.sub_one_lt_floor (H * Real.log (S.P j))).le
+    have hv_le : H * Real.log (S.P j) - 1 ≤ (v : ℝ) := hfloor.trans hv_cast
+    have h1 : (H * Real.log (S.P j) - 1) / H ≤ (v : ℝ) / H :=
+      div_le_div_of_nonneg_right hv_le (le_of_lt hH_pos)
+    rw [sub_div, mul_div_cancel_left₀ _ hH_pos.ne'] at h1
+    have h_inv_H : 1 / H ≤ 1 / 2 := one_div_le_one_div_of_le (by norm_num) hHj
+    linarith
+  have hv_pos : 0 < (v : ℝ) / H := by linarith
+  have hQj_gt1 : (1 : ℝ) < S.Q j := by
+    have := (S.two_le_P j).trans (S.P_le_Q j)
+    exact_mod_cast (by omega : 1 < S.Q j)
+  have hv_le_logQ : (v : ℝ) / H ≤ Real.log (S.Q j) + 1 / 2 := by
+    unfold RangeSystem.Ij at hv
+    rw [Finset.mem_Icc] at hv
+    have hv2 : v ≤ ⌈H * Real.log (S.Q j)⌉₊ := hv.2
+    have hv_cast : (v : ℝ) ≤ (⌈H * Real.log (S.Q j)⌉₊ : ℝ) := by exact_mod_cast hv2
+    have hprod_nonneg : 0 ≤ H * Real.log (S.Q j) := by positivity
+    have hceil : (⌈H * Real.log (S.Q j)⌉₊ : ℝ) ≤ H * Real.log (S.Q j) + 1 :=
+      (Nat.ceil_lt_add_one hprod_nonneg).le
+    have hv_le : (v : ℝ) ≤ H * Real.log (S.Q j) + 1 := hv_cast.trans hceil
+    have h1 : (v : ℝ) / H ≤ (H * Real.log (S.Q j) + 1) / H :=
+      div_le_div_of_nonneg_right hv_le (le_of_lt hH_pos)
+    rw [add_div, mul_div_cancel_left₀ _ hH_pos.ne'] at h1
+    have h_inv_H : 1 / H ≤ 1 / 2 := one_div_le_one_div_of_le (by norm_num) hHj
+    linarith
+  have hr_le_logQi : (r : ℝ) / Hi ≤ Real.log (S.Q i) + 1 / 2 := by
+    unfold RangeSystem.Ij at hr
+    rw [Finset.mem_Icc] at hr
+    have hr2 : r ≤ ⌈Hi * Real.log (S.Q i)⌉₊ := hr.2
+    have hr_cast : (r : ℝ) ≤ (⌈Hi * Real.log (S.Q i)⌉₊ : ℝ) := by exact_mod_cast hr2
+    have hprod_nonneg : 0 ≤ Hi * Real.log (S.Q i) := by positivity
+    have hceil : (⌈Hi * Real.log (S.Q i)⌉₊ : ℝ) ≤ Hi * Real.log (S.Q i) + 1 :=
+      (Nat.ceil_lt_add_one hprod_nonneg).le
+    have hr_le : (r : ℝ) ≤ Hi * Real.log (S.Q i) + 1 := hr_cast.trans hceil
+    have h1 : (r : ℝ) / Hi ≤ (Hi * Real.log (S.Q i) + 1) / Hi :=
+      div_le_div_of_nonneg_right hr_le (le_of_lt hHi_pos)
+    rw [add_div, mul_div_cancel_left₀ _ hHi_pos.ne'] at h1
+    have h_inv_Hi : 1 / Hi ≤ 1 / 2 := one_div_le_one_div_of_le (by norm_num) hHi
+    linarith
+  have hα_pos : 0 ≤ alpha η (i.val + 1) :=
+    alpha_pos η hη0 hη (i.val + 1) (by omega) |>.le
+  have hα_le : alpha η (i.val + 1) ≤ 1 / 4 := by
+    have := alpha_le η hη0 (i.val + 1)
+    linarith
+  have h2α_r : 2 * alpha η (i.val + 1) * ((r : ℝ) / Hi) ≤ (1 / 2) * Real.log (S.Q i) + 1 / 4 := by
+    have h1 : 2 * alpha η (i.val + 1) ≤ 1 / 2 := by linarith
+    nlinarith
+  have hℓ_ge := v_div_H_le_ell_mul hr_pos (v := v) (H := H)
+  have hℓ_le := ell_le_add_one hr_pos hv_pos.le (v := v) (H := H)
+  have h_split := exponent_split_le (alpha η (i.val + 1)) (alpha η (j.val + 1))
+    v r H Hi ℓ hα_pos hr_pos hℓ_ge hℓ_le
+  have h_alpha := alpha_sub_succ_le hη0 hij
+  have h2alpha : 2 * (alpha η (i.val + 1) - alpha η (j.val + 1)) ≤ - (η / j'^2) := by
+    calc 2 * (alpha η (i.val + 1) - alpha η (j.val + 1))
+      _ ≤ 2 * (- (η / (2 * j'^2))) := mul_le_mul_of_nonneg_left h_alpha (by norm_num)
+      _ = - (η / j'^2) := by ring
+  have h_decay : 2 * (alpha η (i.val + 1) - alpha η (j.val + 1)) * ((v : ℝ) / H) ≤
+      - (η / j'^2) * ((v : ℝ) / H) :=
+    mul_le_mul_of_nonneg_right h2alpha hv_pos.le
+  have h_lengthening : -2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi ≤
+      - (η / j'^2) * ((v : ℝ) / H) + (1 / 2) * Real.log (S.Q i) + 1 / 4 := by
+    linarith [h_split, h_decay, h2α_r]
+  have h_c2 := cond2_consequences S hJ hη0 hη j i hij hPi hloglogQj
+  have h_ell_log : (ℓ : ℝ) * Real.log (ℓ : ℝ) ≤
+      (((v : ℝ) / H) / ((r : ℝ) / Hi)) * Real.log (((v : ℝ) / H) / ((r : ℝ) / Hi)) + Real.log (Real.log (S.Q j)) + 2 :=
+    ell_log_ell_le hQj_gt1 hloglogQj hr_pos hr_ge1 hv_pos hv_le_logQ (H := H) (Hi := Hi)
+  have h_x_log : (((v : ℝ) / H) / ((r : ℝ) / Hi)) * Real.log (((v : ℝ) / H) / ((r : ℝ) / Hi)) ≤
+      (107 / 400 : ℝ) * (η / j'^2) * ((v : ℝ) / H) :=
+    x_log_x_le hQj_gt1 hloglogQj hr_ge_sub1 hr_ge1 hPi1_pos hv_pos hv_le_logQ h_c2.1 (j' := j')
+  let x := ((v : ℝ) / H) / ((r : ℝ) / Hi)
+  have h_ell_le_x : (ℓ : ℝ) ≤ ((v : ℝ) / H) / (Real.log (S.P i) - 1) + 1 := by
+    have h1 : (ℓ : ℝ) ≤ x + 1 := ell_le_add_one hr_pos hv_pos.le
+    have h2 : x ≤ ((v : ℝ) / H) / (Real.log (S.P i) - 1) :=
+      div_le_div_of_nonneg_left hv_pos.le hPi1_pos hr_ge_sub1
+    linarith
+  have h_ell_le_final : (ℓ : ℝ) ≤ (η / (8 * j'^2)) * ((v : ℝ) / H) + 1 := by
+    have h1 : ((v : ℝ) / H) / (Real.log (S.P i) - 1) = ((v : ℝ) / H) * (1 / (Real.log (S.P i) - 1)) := by ring
+    rw [h1] at h_ell_le_x
+    have h2 : ((v : ℝ) / H) * (1 / (Real.log (S.P i) - 1)) ≤ ((v : ℝ) / H) * (η / (8 * j'^2)) :=
+      mul_le_mul_of_nonneg_left h_c2.2.1 hv_pos.le
+    linarith
+  have h_fact_exp : 2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5 ≤
+      2 * ((107 / 400 : ℝ) * (η / j'^2) * ((v : ℝ) / H) + Real.log (Real.log (S.Q j)) + 2) +
+        ((1 / 8 : ℝ) * (η / j'^2) * ((v : ℝ) / H) + 1) + 5 := by
+    have : (η / (8 * j'^2)) * ((v : ℝ) / H) = (1 / 8 : ℝ) * (η / j'^2) * ((v : ℝ) / H) := by ring
+    rw [this] at h_ell_le_final
+    linarith [h_ell_log, h_x_log, h_ell_le_final]
+  let delta : ℝ := η / j'^2
+  have hdelta_pos : 0 < delta := by positivity
+  have hdelta_le : delta ≤ 1 / 24 := by
+    have h1 : delta ≤ (1 / 6 : ℝ) / j'^2 := div_le_div_of_nonneg_right hη.le (by positivity)
+    have h2 : (1 / 6 : ℝ) / j'^2 ≤ (1 / 24 : ℝ) := by
+      have h_step : (1 / 6 : ℝ) / j'^2 ≤ (1 / 6 : ℝ) / 4 :=
+        div_le_div_of_nonneg_left (by norm_num) (by norm_num) hj'2
+      have h_eval : (1 / 6 : ℝ) / 4 = 1 / 24 := by norm_num
+      rwa [h_eval] at h_step
+    exact h1.trans h2
+  have hlogQi_nonneg : 0 ≤ Real.log (S.Q i) := by
+    have : (1 : ℝ) ≤ (S.Q i : ℝ) := by
+      have := (S.two_le_P i).trans (S.P_le_Q i)
+      exact_mod_cast (by omega : 1 ≤ S.Q i)
+    exact Real.log_nonneg this
+  have hcond3 := S.cond3 j i hij
+  have h_log_j_nonneg : 0 ≤ 16 * Real.log j' :=
+    mul_nonneg (by norm_num) (Real.log_nonneg (by linarith))
+  have h_Pj_bound : (8 / delta) * Real.log (S.Q i) ≤ Real.log (S.P j) := by
+    have : 8 * j'^2 / η = 8 / delta := by
+      dsimp [delta]
+      field_simp
+    rw [← this]
+    linarith [hcond3, h_log_j_nonneg]
+  have h_main_linear := real_exponent_linear_bound
+    (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi)
+    (2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5)
+    ((v : ℝ) / H) (Real.log (S.P j)) (Real.log (S.Q i)) (Real.log (Real.log (S.Q j)))
+    delta hdelta_pos hdelta_le hlogQi_nonneg h_lengthening h_fact_exp hv_div_ge h_Pj_bound h_c2.2.2
+  exact h_main_linear
+
+lemma summand_bound {J : ℕ} {η : ℝ} (S : RangeSystem J η) (hJ : 0 < J)
+    (hη0 : 0 < η) (hη : η < 1 / 6) (j i : Fin J) (hij : i.val + 1 = j.val)
+    (v r : ℕ) (hv : v ∈ S.Ij hJ j) (hr : r ∈ S.Ij hJ i)
+    (hHj : 2 ≤ S.Hj hJ j) (hHi : 2 ≤ S.Hj hJ i)
+    (hPj : 2 ≤ Real.log (S.P j)) (hPi : 2 ≤ Real.log (S.P i))
+    (hloglogQj : 2 ≤ Real.log (Real.log (S.Q j))) :
+    let H := S.Hj hJ j;
+    let Hi := S.Hj hJ i;
+    let ℓ := ell v r H Hi;
+    Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+      ((8 : ℝ) ^ ℓ * (((ℓ + 1).factorial : ℝ)) ^ 2) ≤
+      Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)) := by
+  intro H Hi ℓ
+  have hH_pos : 0 < H := by linarith
+  have hHi_pos : 0 < Hi := by linarith
+  have hr_pos : 0 < (r : ℝ) / Hi := by
+    have := three_halves_le_r_div_Hi S hJ i r hr hHi hPi
+    linarith
+  have hv_pos : 0 < (v : ℝ) / H := by
+    have := three_halves_le_v_div_Hj S hJ j v hv hHj hPj
+    linarith
+  have hℓ_ge1 : 1 ≤ ℓ := one_le_ell hv_pos hr_pos
+  have h_fact := eight_pow_mul_factorial_sq_le ℓ hℓ_ge1
+  have h_exp_bound := total_exp_bound S hJ hη0 hη j i hij v r hv hr hHj hHi hPj hPi hloglogQj
+  have h_prod : Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+      ((8 : ℝ) ^ ℓ * (((ℓ + 1).factorial : ℝ)) ^ 2) ≤
+      Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+        Real.exp (2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5) :=
+    mul_le_mul_of_nonneg_left h_fact (by positivity)
+  have h_exp_add : Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+      Real.exp (2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5) =
+      Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ℓ : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi +
+        (2 * (ℓ : ℝ) * Real.log (ℓ : ℝ) + (ℓ : ℝ) + 5)) := by
+    rw [← Real.exp_add]
+  rw [h_exp_add] at h_prod
+  have h_le_exp := Real.exp_le_exp.mpr h_exp_bound
+  have h_split_exp : Real.exp (- (215 / 100 : ℝ) * Real.log (S.Q i) + 12) =
+      Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)) := by
+    have hQi_pos : 0 < (S.Q i : ℝ) := by
+      have := (S.two_le_P i).trans (S.P_le_Q i)
+      exact Nat.cast_pos.mpr (by omega)
+    rw [add_comm, Real.exp_add, Real.rpow_def_of_pos hQi_pos]
+    ring_nf
+  rw [h_split_exp] at h_le_exp
+  exact h_prod.trans h_le_exp
+
+
+lemma double_sum_le {J : ℕ} {η : ℝ} (S : RangeSystem J η) (hJ : 0 < J)
+    (hη0 : 0 < η) (hη : η < 1 / 6) (j i : Fin J) (hij : i.val + 1 = j.val)
+    (hHj : 2 ≤ S.Hj hJ j) (hHi : 2 ≤ S.Hj hJ i)
+    (hPj : 2 ≤ Real.log (S.P j)) (hPi : 2 ≤ Real.log (S.P i))
+    (hloglogQj : 2 ≤ Real.log (Real.log (S.Q j))) :
+    let H := S.Hj hJ j;
+    let Hi := S.Hj hJ i;
+    (∑ v ∈ S.Ij hJ j, ∑ r ∈ S.Ij hJ i,
+      Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ell v r H Hi : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+        ((8 : ℝ) ^ (ell v r H Hi) * (((ell v r H Hi + 1).factorial : ℝ)) ^ 2)) ≤
+      ((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ) * (Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) := by
+  intro H Hi
+  have h_term : ∀ v ∈ S.Ij hJ j, ∀ r ∈ S.Ij hJ i,
+      Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ell v r H Hi : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+        ((8 : ℝ) ^ (ell v r H Hi) * (((ell v r H Hi + 1).factorial : ℝ)) ^ 2) ≤
+      Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)) :=
+    fun v hv r hr => summand_bound S hJ hη0 hη j i hij v r hv hr hHj hHi hPj hPi hloglogQj
+  have h_inner : ∀ v ∈ S.Ij hJ j,
+      (∑ r ∈ S.Ij hJ i, Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ell v r H Hi : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+        ((8 : ℝ) ^ (ell v r H Hi) * (((ell v r H Hi + 1).factorial : ℝ)) ^ 2)) ≤
+      ((S.Ij hJ i).card : ℝ) * (Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) := by
+    intro v hv
+    have h_sum := Finset.sum_le_sum (h_term v hv)
+    simp only [Finset.sum_const, nsmul_eq_mul] at h_sum
+    exact h_sum
+  have h_outer := Finset.sum_le_sum h_inner
+  simp only [Finset.sum_const, nsmul_eq_mul] at h_outer
+  calc (∑ v ∈ S.Ij hJ j, ∑ r ∈ S.Ij hJ i, _)
+    _ ≤ ((S.Ij hJ j).card : ℝ) * (((S.Ij hJ i).card : ℝ) * (Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)))) := h_outer
+    _ = ((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ) * (Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) := by ring
+
+lemma H_cubed_le {J : ℕ} {η : ℝ} (S : RangeSystem J η) (hJ : 0 < J)
+    (hη0 : 0 < η) (hη : η < 1 / 6) (j i : Fin J) :
+    let j' : ℝ := ((j.val + 1 : ℕ) : ℝ)
+    (S.Hj hJ j) ^ 3 ≤ (1 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (1 / 2 : ℝ) := by
+  intro j'
+  have hP0_ge2 : 2 ≤ S.P ⟨0, hJ⟩ := S.two_le_P ⟨0, hJ⟩
+  have hP0_pos : 0 < (S.P ⟨0, hJ⟩ : ℝ) := Nat.cast_pos.mpr (by omega)
+  have hP0_ge1 : 1 ≤ (S.P ⟨0, hJ⟩ : ℝ) := by exact_mod_cast (by omega : 1 ≤ S.P ⟨0, hJ⟩)
+  have hQ0_ge2 : 2 ≤ S.Q ⟨0, hJ⟩ := (S.two_le_P ⟨0, hJ⟩).trans (S.P_le_Q ⟨0, hJ⟩)
+  have hQ0_pos : 0 < (S.Q ⟨0, hJ⟩ : ℝ) := Nat.cast_pos.mpr (by omega)
+  have hlogQ0_ge : Real.log 2 ≤ Real.log (S.Q ⟨0, hJ⟩) := by
+    have : (2 : ℝ) ≤ (S.Q ⟨0, hJ⟩ : ℝ) := by exact_mod_cast hQ0_ge2
+    exact Real.log_le_log (by norm_num) this
+  have hlog2_pos : 0 < Real.log 2 := by linarith [Real.log_two_gt_d9]
+  have hlogQ0_pos : 0 < Real.log (S.Q ⟨0, hJ⟩) := hlog2_pos.trans_le hlogQ0_ge
+  have h_P0_le_Pi : Real.log (S.P ⟨0, hJ⟩) ≤ Real.log (S.P i) := by
+    have h_ge := RangeSystem.log_P_ge S hJ hη0 hη i
+    have hi1 : (1 : ℝ) ≤ ((i.val + 1 : ℕ) : ℝ) ^ 2 := by
+      have : (1 : ℝ) ≤ ((i.val + 1 : ℕ) : ℝ) := by exact_mod_cast (by omega : 1 ≤ i.val + 1)
+      nlinarith
+    calc Real.log (S.P ⟨0, hJ⟩)
+      _ = 1 * Real.log (S.P ⟨0, hJ⟩) := by ring
+      _ ≤ ((i.val + 1 : ℕ) : ℝ) ^ 2 * Real.log (S.P ⟨0, hJ⟩) :=
+        mul_le_mul_of_nonneg_right hi1 (Real.log_nonneg hP0_ge1)
+      _ ≤ Real.log (S.P i) := h_ge
+  have hPi_pos : (0 : ℝ) < S.P i := Nat.cast_pos.mpr (by linarith [S.two_le_P i])
+  have hPi_le_Qi : (S.P i : ℝ) ≤ S.Q i := by exact_mod_cast (S.P_le_Q i)
+  have h_P0_le_Qi : (S.P ⟨0, hJ⟩ : ℝ) ≤ (S.Q i : ℝ) := by
+    have h_log := h_P0_le_Pi.trans (Real.log_le_log hPi_pos hPi_le_Qi)
+    have hQi_pos : 0 < (S.Q i : ℝ) := hPi_pos.trans_le hPi_le_Qi
+    have h_exp := Real.exp_le_exp.mpr h_log
+    rw [Real.exp_log hP0_pos, Real.exp_log hQi_pos] at h_exp
+    exact h_exp
+  have hQi_pos : 0 < (S.Q i : ℝ) := by
+    have := (S.two_le_P i).trans (S.P_le_Q i)
+    exact Nat.cast_pos.mpr (by omega)
+  have hQi_ge1 : 1 ≤ (S.Q i : ℝ) := by
+    have := (S.two_le_P i).trans (S.P_le_Q i)
+    exact_mod_cast (by omega : 1 ≤ S.Q i)
+  have hP0_rpow : (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η) ≤ (S.Q i : ℝ) ^ (1 / 6 : ℝ) := by
+    have h1 : (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η) ≤ (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 : ℝ) := by
+      refine Real.rpow_le_rpow_of_exponent_le hP0_ge1 ?_
+      linarith
+    have h2 : (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 : ℝ) ≤ (S.Q i : ℝ) ^ (1 / 6 : ℝ) :=
+      Real.rpow_le_rpow hP0_pos.le h_P0_le_Qi (by norm_num)
+    exact h1.trans h2
+  unfold RangeSystem.Hj
+  have h_cube_H : (j'^2 * (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η) / (Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ)) ^ 3 =
+      (j'^2)^3 * ((S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η))^3 / ((Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ))^3 := by
+    ring
+  rw [h_cube_H]
+  have hj'6 : (j'^2)^3 = j'^6 := by ring
+  rw [hj'6]
+  have h_denom_cube : ((Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ))^3 = Real.log (S.Q ⟨0, hJ⟩) := by
+    have h_rpow : ((Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ))^3 = ((Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ))^(3 : ℝ) := by
+      exact (Real.rpow_natCast ((Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ)) 3).symm
+    rw [h_rpow, ← Real.rpow_mul hlogQ0_pos.le]
+    have : (1 / 3 : ℝ) * 3 = 1 := by norm_num
+    rw [this, Real.rpow_one]
+  rw [h_denom_cube]
+  have h_inv_log : 1 / Real.log (S.Q ⟨0, hJ⟩) ≤ 1 / Real.log 2 :=
+    one_div_le_one_div_of_le hlog2_pos hlogQ0_ge
+  have h_num_cube : ((S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η))^3 ≤ (S.Q i : ℝ) ^ (1 / 2 : ℝ) := by
+    have h_le : ((S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η))^3 ≤ ((S.Q i : ℝ) ^ (1 / 6 : ℝ))^3 := by gcongr
+    have h_rpow : ((S.Q i : ℝ) ^ (1 / 6 : ℝ))^3 = ((S.Q i : ℝ) ^ (1 / 6 : ℝ))^(3 : ℝ) := by
+      exact (Real.rpow_natCast ((S.Q i : ℝ) ^ (1 / 6 : ℝ)) 3).symm
+    rw [h_rpow, ← Real.rpow_mul hQi_pos.le] at h_le
+    have : (1 / 6 : ℝ) * 3 = 1 / 2 := by norm_num
+    rw [this] at h_le
+    exact h_le
+  calc j' ^ 6 * ((S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η)) ^ 3 / Real.log (S.Q ⟨0, hJ⟩)
+    _ = (1 / Real.log (S.Q ⟨0, hJ⟩)) * (j' ^ 6 * ((S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η)) ^ 3) := by ring
+    _ ≤ (1 / Real.log 2) * (j' ^ 6 * ((S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η)) ^ 3) :=
+      mul_le_mul_of_nonneg_right h_inv_log (by positivity)
+    _ ≤ (1 / Real.log 2) * (j' ^ 6 * (S.Q i : ℝ) ^ (1 / 2 : ℝ)) := by
+      have : 0 ≤ (1 / Real.log 2 : ℝ) * j' ^ 6 := by positivity
+      have h_mul := mul_le_mul_of_nonneg_left h_num_cube this
+      linarith
+    _ = (1 / Real.log 2) * j' ^ 6 * (S.Q i : ℝ) ^ (1 / 2 : ℝ) := by ring
+
+lemma log_Qj_cubed_le {Qj Qi : ℝ} (hQi_ge1 : 1 ≤ Qi) (hQi_pos : 0 < Qi)
+    (hlogQj_pos : 0 < Real.log Qj)
+    (hloglog : Real.log (Real.log Qj) ≤ (1 / 96 : ℝ) * Real.log Qi) :
+    (Real.log Qj) ^ 3 ≤ Qi ^ (1 / 8 : ℝ) := by
+  have h_exp := Real.exp_le_exp.mpr hloglog
+  rw [Real.exp_log hlogQj_pos] at h_exp
+  have h_rpow : Real.exp ((1 / 96 : ℝ) * Real.log Qi) = Qi ^ (1 / 96 : ℝ) := by
+    rw [Real.rpow_def_of_pos hQi_pos]
+    ring_nf
+  rw [h_rpow] at h_exp
+  have h_cube : (Real.log Qj) ^ 3 ≤ (Qi ^ (1 / 96 : ℝ)) ^ 3 := by
+    gcongr
+  have h_cube_rpow : (Qi ^ (1 / 96 : ℝ)) ^ 3 = (Qi ^ (1 / 96 : ℝ)) ^ (3 : ℝ) := by
+    exact (Real.rpow_natCast (Qi ^ (1 / 96 : ℝ)) 3).symm
+  rw [h_cube_rpow, ← Real.rpow_mul hQi_pos.le] at h_cube
+  have h_mult : (1 / 96 : ℝ) * 3 = 1 / 32 := by norm_num
+  rw [h_mult] at h_cube
+  have h_le_18 : Qi ^ (1 / 32 : ℝ) ≤ Qi ^ (1 / 8 : ℝ) := by
+    refine Real.rpow_le_rpow_of_exponent_le hQi_ge1 ?_
+    norm_num
+  exact h_cube.trans h_le_18
+
+lemma card_Ij_le {J : ℕ} {η : ℝ} (S : RangeSystem J η) (hJ : 0 < J)
+    (j : Fin J) (hH : 2 ≤ S.Hj hJ j) (hlogQ : 4 ≤ Real.log (S.Q j)) :
+    ((S.Ij hJ j).card : ℝ) ≤ 2 * (S.Hj hJ j * Real.log (S.Q j)) := by
+  unfold RangeSystem.Ij
+  rw [Nat.card_Icc]
+  have h_le_nat : ⌈S.Hj hJ j * Real.log (S.Q j)⌉₊ + 1 - ⌊S.Hj hJ j * Real.log (S.P j)⌋₊ ≤
+      ⌈S.Hj hJ j * Real.log (S.Q j)⌉₊ + 1 := Nat.sub_le _ _
+  have h_cast : ((⌈S.Hj hJ j * Real.log (S.Q j)⌉₊ + 1 - ⌊S.Hj hJ j * Real.log (S.P j)⌋₊ : ℕ) : ℝ) ≤
+      ((⌈S.Hj hJ j * Real.log (S.Q j)⌉₊ + 1 : ℕ) : ℝ) := Nat.cast_le.mpr h_le_nat
+  push_cast at h_cast
+  have hprod_nonneg : 0 ≤ S.Hj hJ j * Real.log (S.Q j) := by positivity
+  have hceil : (⌈S.Hj hJ j * Real.log (S.Q j)⌉₊ : ℝ) ≤ S.Hj hJ j * Real.log (S.Q j) + 1 :=
+    (Nat.ceil_lt_add_one hprod_nonneg).le
+  have h8 : 8 ≤ S.Hj hJ j * Real.log (S.Q j) := by nlinarith
+  linarith
+
+
+lemma log_Qi_le_log_Qj {J : ℕ} {η : ℝ} (S : RangeSystem J η) (hη0 : 0 < η) (hη : η < 1 / 6)
+    (j i : Fin J) (hij : i.val + 1 = j.val) :
+    Real.log (S.Q i) ≤ Real.log (S.Q j) := by
+  have hcond3 := S.cond3 j i hij
+  have hj' : (1 : ℝ) ≤ ((j.val + 1 : ℕ) : ℝ) := by exact_mod_cast (by omega : 1 ≤ j.val + 1)
+  have h_log_j_nonneg : 0 ≤ 16 * Real.log ((j.val + 1 : ℕ) : ℝ) :=
+    mul_nonneg (by norm_num) (Real.log_nonneg hj')
+  have h1 : (8 * ((j.val + 1 : ℕ) : ℝ) ^ 2 / η) * Real.log (S.Q i) ≤ Real.log (S.P j) := by
+    linarith [hcond3, h_log_j_nonneg]
+  have hj'2 : (1 : ℝ) ≤ ((j.val + 1 : ℕ) : ℝ) ^ 2 := by nlinarith
+  have h_coeff : 1 ≤ 8 * ((j.val + 1 : ℕ) : ℝ) ^ 2 / η := by
+    have h_div : 1 ≤ 8 / η := by
+      rw [le_div_iff₀ hη0]
+      linarith
+    have : 8 * ((j.val + 1 : ℕ) : ℝ) ^ 2 / η = ((j.val + 1 : ℕ) : ℝ) ^ 2 * (8 / η) := by ring
+    rw [this]
+    nlinarith
+  have hQi_pos : (0 : ℝ) < S.Q i := by
+    have := (S.two_le_P i).trans (S.P_le_Q i)
+    exact Nat.cast_pos.mpr (by omega)
+  have hQi_ge1 : (1 : ℝ) ≤ S.Q i := by
+    have := (S.two_le_P i).trans (S.P_le_Q i)
+    exact_mod_cast (by omega : 1 ≤ S.Q i)
+  have hlogQi_nonneg : 0 ≤ Real.log (S.Q i) := Real.log_nonneg hQi_ge1
+  have h_log_le : Real.log (S.Q i) ≤ (8 * ((j.val + 1 : ℕ) : ℝ) ^ 2 / η) * Real.log (S.Q i) := by
+    calc Real.log (S.Q i)
+      _ = 1 * Real.log (S.Q i) := by ring
+      _ ≤ (8 * ((j.val + 1 : ℕ) : ℝ) ^ 2 / η) * Real.log (S.Q i) :=
+        mul_le_mul_of_nonneg_right h_coeff hlogQi_nonneg
+  have hPj_pos : (0 : ℝ) < S.P j := Nat.cast_pos.mpr (by linarith [S.two_le_P j])
+  have hPj_le_Qj : (S.P j : ℝ) ≤ S.Q j := by exact_mod_cast (S.P_le_Q j)
+  have h_logPj_le : Real.log (S.P j) ≤ Real.log (S.Q j) := Real.log_le_log hPj_pos hPj_le_Qj
+  exact h_log_le.trans (h1.trans h_logPj_le)
+
+
+lemma rpow_half_mul_rpow_eighth {Q : ℝ} (hQ : 0 < Q) :
+    Q ^ (1 / 2 : ℝ) * Q ^ (1 / 8 : ℝ) = Q ^ (5 / 8 : ℝ) := by
+  rw [← Real.rpow_add hQ]
+  congr 1
+  norm_num
+
+lemma main_prefactor_le {J : ℕ} {η : ℝ} (S : RangeSystem J η) (hJ : 0 < J)
+    (hη0 : 0 < η) (hη : η < 1 / 6) (j i : Fin J) (hij : i.val + 1 = j.val)
+    (hHj : 2 ≤ S.Hj hJ j) (hHi : 2 ≤ S.Hj hJ i)
+    (hPj : 2 ≤ Real.log (S.P j)) (hPi : 2 ≤ Real.log (S.P i))
+    (hloglogQ : ∀ k, 2 ≤ Real.log (Real.log (S.Q k))) :
+    let H := S.Hj hJ j;
+    let Hi := S.Hj hJ i;
+    (H * Real.log (S.Q j)) * (S.Q i : ℝ) * (∑ v ∈ S.Ij hJ j, ∑ r ∈ S.Ij hJ i,
+      Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ell v r H Hi : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+        ((8 : ℝ) ^ (ell v r H Hi) * (((ell v r H Hi + 1).factorial : ℝ)) ^ 2)) ≤
+      (4 * Real.exp 12 / Real.log 2) * (((j.val + 1 : ℕ) : ℝ) ^ 6 / Real.sqrt (S.Q i)) := by
+  intro H Hi
+  let j' : ℝ := ((j.val + 1 : ℕ) : ℝ)
+  have hj' : (2 : ℝ) ≤ j' := by
+    change (2 : ℝ) ≤ ((j.val + 1 : ℕ) : ℝ)
+    exact_mod_cast (by omega : 2 ≤ j.val + 1)
+  have hlog2_pos : 0 < Real.log 2 := by linarith [Real.log_two_gt_d9]
+  have hQi_ge2 : 2 ≤ S.Q i := (S.two_le_P i).trans (S.P_le_Q i)
+  have hQi_pos : 0 < (S.Q i : ℝ) := Nat.cast_pos.mpr (by omega)
+  have hQi_ge1 : 1 ≤ (S.Q i : ℝ) := by exact_mod_cast (by omega : 1 ≤ S.Q i)
+  have hQj_gt1 : (1 : ℝ) < S.Q j := by
+    have := (S.two_le_P j).trans (S.P_le_Q j)
+    exact_mod_cast (by omega : 1 < S.Q j)
+  have hQi_gt1 : (1 : ℝ) < S.Q i := by exact_mod_cast (by omega : 1 < S.Q i)
+  have hlogQj_ge4 : 4 ≤ Real.log (S.Q j) := four_le_log_Q hQj_gt1 (hloglogQ j)
+  have hlogQi_ge4 : 4 ≤ Real.log (S.Q i) := four_le_log_Q hQi_gt1 (hloglogQ i)
+  have hlogQj_pos : 0 < Real.log (S.Q j) := by linarith
+  have hlogQi_pos : 0 < Real.log (S.Q i) := by linarith
+  have hH_pos : 0 < H := by linarith
+  have hHi_pos : 0 < Hi := by linarith
+  have h_HlogQ_pos : 0 < H * Real.log (S.Q j) := mul_pos hH_pos hlogQj_pos
+  have h_double := double_sum_le S hJ hη0 hη j i hij hHj hHi hPj hPi (hloglogQ j)
+  have h_prod_double : (H * Real.log (S.Q j)) * (S.Q i : ℝ) * (∑ v ∈ S.Ij hJ j, ∑ r ∈ S.Ij hJ i,
+        Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ell v r H Hi : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+          ((8 : ℝ) ^ (ell v r H Hi) * (((ell v r H Hi + 1).factorial : ℝ)) ^ 2)) ≤
+      (H * Real.log (S.Q j)) * (S.Q i : ℝ) *
+        (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ) * (Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)))) := by
+    refine mul_le_mul_of_nonneg_left h_double (by positivity)
+  have h_card_j : ((S.Ij hJ j).card : ℝ) ≤ 2 * (H * Real.log (S.Q j)) := card_Ij_le S hJ j hHj hlogQj_ge4
+  have h_card_i : ((S.Ij hJ i).card : ℝ) ≤ 2 * (H * Real.log (S.Q j)) := by
+    have h1 : ((S.Ij hJ i).card : ℝ) ≤ 2 * (Hi * Real.log (S.Q i)) := card_Ij_le S hJ i hHi hlogQi_ge4
+    have hHi_le_H : Hi ≤ H := Hj_le_Hj_of_le S hJ i j (by omega)
+    have hlogQi_le_logQj : Real.log (S.Q i) ≤ Real.log (S.Q j) := log_Qi_le_log_Qj S hη0 hη j i hij
+    have h_prod : Hi * Real.log (S.Q i) ≤ H * Real.log (S.Q j) := by
+      have : 0 ≤ Hi := by positivity
+      have : 0 ≤ Real.log (S.Q i) := by positivity
+      nlinarith
+    linarith
+  have h_cards : ((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ) ≤ 4 * (H * Real.log (S.Q j)) ^ 2 := by
+    have h_mul : ((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ) ≤
+        (2 * (H * Real.log (S.Q j))) * (2 * (H * Real.log (S.Q j))) :=
+      mul_le_mul h_card_j h_card_i (by positivity) (by positivity)
+    calc ((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ)
+      _ ≤ (2 * (H * Real.log (S.Q j))) * (2 * (H * Real.log (S.Q j))) := h_mul
+      _ = 4 * (H * Real.log (S.Q j)) ^ 2 := by ring
+  have h_cube_factor : (H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ)) ≤
+      4 * (H * Real.log (S.Q j)) ^ 3 := by
+    calc (H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ))
+      _ ≤ (H * Real.log (S.Q j)) * (4 * (H * Real.log (S.Q j)) ^ 2) :=
+        mul_le_mul_of_nonneg_left h_cards h_HlogQ_pos.le
+      _ = 4 * (H * Real.log (S.Q j)) ^ 3 := by ring
+  have hH3 : H ^ 3 ≤ (1 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (1 / 2 : ℝ) := H_cubed_le S hJ hη0 hη j i
+  have h_c2 := cond2_consequences S hJ hη0 hη j i hij hPi (hloglogQ j)
+  have hlogQ3 : (Real.log (S.Q j)) ^ 3 ≤ (S.Q i : ℝ) ^ (1 / 8 : ℝ) :=
+    log_Qj_cubed_le hQi_ge1 hQi_pos hlogQj_pos h_c2.2.2
+  have h_HlogQ_cube : (H * Real.log (S.Q j)) ^ 3 ≤ (1 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ) := by
+    have h_split : (H * Real.log (S.Q j)) ^ 3 = H ^ 3 * (Real.log (S.Q j)) ^ 3 := by ring
+    rw [h_split]
+    have h_mul : H ^ 3 * (Real.log (S.Q j)) ^ 3 ≤
+        ((1 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (1 / 2 : ℝ)) * (S.Q i : ℝ) ^ (1 / 8 : ℝ) := by
+      refine mul_le_mul hH3 hlogQ3 (by positivity) (by positivity)
+    have h_assoc : ((1 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (1 / 2 : ℝ)) * (S.Q i : ℝ) ^ (1 / 8 : ℝ) =
+        (1 / Real.log 2) * j'^6 * ((S.Q i : ℝ) ^ (1 / 2 : ℝ) * (S.Q i : ℝ) ^ (1 / 8 : ℝ)) := by ring
+    rw [h_assoc, rpow_half_mul_rpow_eighth hQi_pos] at h_mul
+    exact h_mul
+  have h_four_HlogQ : 4 * (H * Real.log (S.Q j)) ^ 3 ≤ (4 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ) := by
+    calc 4 * (H * Real.log (S.Q j)) ^ 3
+      _ ≤ 4 * ((1 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ)) := mul_le_mul_of_nonneg_left h_HlogQ_cube (by norm_num)
+      _ = (4 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ) := by ring
+  have h_cards_bound : (H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ)) ≤
+      (4 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ) :=
+    h_cube_factor.trans h_four_HlogQ
+  have h_alg_reorder : (H * Real.log (S.Q j)) * (S.Q i : ℝ) *
+        (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ) * (Real.exp 12 * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)))) =
+      Real.exp 12 * ((H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ))) *
+        ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) := by ring
+  rw [h_alg_reorder] at h_prod_double
+  have h_Qi_prod : (S.Q i : ℝ) ^ (5 / 8 : ℝ) * ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) ≤
+      1 / Real.sqrt (S.Q i) := by
+    have h_rpow1 : (S.Q i : ℝ) = (S.Q i : ℝ) ^ (1 : ℝ) := (Real.rpow_one (S.Q i : ℝ)).symm
+    have h_pow_sum : (S.Q i : ℝ) ^ (5 / 8 : ℝ) * ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) =
+        (S.Q i : ℝ) ^ (5 / 8 + 1 - (215 / 100 : ℝ)) := by
+      nth_rw 2 [h_rpow1]
+      rw [← Real.rpow_add hQi_pos, ← Real.rpow_add hQi_pos]
+      congr 1
+      ring
+    rw [h_pow_sum]
+    have h_exp_le : 5 / 8 + 1 - (215 / 100 : ℝ) ≤ - (1 / 2 : ℝ) := by norm_num
+    have h_le := Real.rpow_le_rpow_of_exponent_le hQi_ge1 h_exp_le
+    have h_sqrt : (S.Q i : ℝ) ^ (- (1 / 2 : ℝ)) = 1 / Real.sqrt (S.Q i) := by
+      rw [Real.rpow_neg hQi_pos.le, Real.sqrt_eq_rpow, inv_eq_one_div]
+    rw [h_sqrt] at h_le
+    exact h_le
+  have h_final_mult : Real.exp 12 * ((H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ))) *
+        ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) ≤
+      (4 * Real.exp 12 / Real.log 2) * (j'^6 / Real.sqrt (S.Q i)) := by
+    have h_step : Real.exp 12 * ((H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ))) *
+        ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) ≤
+        Real.exp 12 * ((4 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ)) *
+          ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) := by
+      have : 0 ≤ Real.exp 12 * ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) := by positivity
+      calc Real.exp 12 * ((H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ))) *
+          ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)))
+        _ = ((H * Real.log (S.Q j)) * (((S.Ij hJ j).card : ℝ) * ((S.Ij hJ i).card : ℝ))) *
+            (Real.exp 12 * ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)))) := by ring
+        _ ≤ ((4 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ)) *
+            (Real.exp 12 * ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)))) :=
+          mul_le_mul_of_nonneg_right h_cards_bound this
+        _ = Real.exp 12 * ((4 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ)) *
+            ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) := by ring
+    have h_reorder : Real.exp 12 * ((4 / Real.log 2) * j'^6 * (S.Q i : ℝ) ^ (5 / 8 : ℝ)) *
+          ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ))) =
+        (4 * Real.exp 12 / Real.log 2) * j'^6 *
+          ((S.Q i : ℝ) ^ (5 / 8 : ℝ) * ((S.Q i : ℝ) * (S.Q i : ℝ) ^ (- (215 / 100 : ℝ)))) := by ring
+    rw [h_reorder] at h_step
+    have h_pos_pre : 0 ≤ (4 * Real.exp 12 / Real.log 2) * j'^6 := by positivity
+    have h_comb := mul_le_mul_of_nonneg_left h_Qi_prod h_pos_pre
+    have h_eq_div : (4 * Real.exp 12 / Real.log 2) * j'^6 * (1 / Real.sqrt (S.Q i)) =
+        (4 * Real.exp 12 / Real.log 2) * (j'^6 / Real.sqrt (S.Q i)) := by ring
+    rw [h_eq_div] at h_comb
+    exact h_step.trans h_comb
+  exact h_prod_double.trans h_final_mult
+
+
+lemma test_max_le (A B C D C_main : ℝ)
+    (hA : 0 ≤ A) (hB : 0 ≤ B) (hC : 0 ≤ C) (hD : 0 ≤ D) :
+    C_main * B + A + C + D ≤ (max C_main 1) * (A + B + C + D) := by
+  have hB_le : C_main * B ≤ (max C_main 1) * B := mul_le_mul_of_nonneg_right (le_max_left _ _) hB
+  have hA_le : A ≤ (max C_main 1) * A := by
+    calc A = 1 * A := by ring
+      _ ≤ (max C_main 1) * A := mul_le_mul_of_nonneg_right (le_max_right _ _) hA
+  have hC_le : C ≤ (max C_main 1) * C := by
+    calc C = 1 * C := by ring
+      _ ≤ (max C_main 1) * C := mul_le_mul_of_nonneg_right (le_max_right _ _) hC
+  have hD_le : D ≤ (max C_main 1) * D := by
+    calc D = 1 * D := by ring
+      _ ≤ (max C_main 1) * D := mul_le_mul_of_nonneg_right (le_max_right _ _) hD
+  linarith
+
+/-- Main unsifted level set bound (Proposition 1 unsifted step, Section 8.2).
+Bounds the integral of ‖Fu β X (1 + it)‖² over T_j by a constant times (T/X + 1)
+times the sum of the primary error term, the lengthened decay term (j+1)^6 / √Q_i,
+the prime reciprocal 1 / P_j, and the sifted fraction. -/
+theorem integral_Tset_succ_le_unsifted {η : ℝ} (hη0 : 0 < η) (hη : η < 1 / 6) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (J : ℕ) (S : RangeSystem J η) (hJ : 0 < J) (β : ℝ) (X : ℕ) (T₀ T : ℝ) (j i : Fin J),
+      i.val + 1 = j.val → 3 / 4 ≤ β → β < 1 → 2 ≤ X → 0 ≤ T₀ → T₀ ≤ T → T ≤ X →
+      (∀ j, (S.Q j : ℝ) ≤ (X : ℝ) ^ β) → (∀ j, 2 ≤ S.Hj hJ j ∧ S.Hj hJ j ≤ Real.sqrt (S.P j)) →
+      (∀ j, 2 ≤ Real.log (S.P j)) → (∀ j, 2 ≤ Real.log (Real.log (S.Q j))) → (S.Q j : ℝ) ^ 4 ≤ X →
+      ∫ t in S.Tset hJ β X T₀ T j, ‖Fu β X ((1 : ℂ) + t * Complex.I)‖ ^ 2 ≤
+        C * (T / X + 1) * ((Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ) / (((j.val + 1 : ℕ) : ℝ) ^ 2 * (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η))
+          + ((j.val + 1 : ℕ) : ℝ) ^ 6 / Real.sqrt (S.Q i) + 1 / (S.P j : ℝ)
+          + (((Finset.Ioc X (2 * X)).filter (fun n => ∀ p ∈ primeRange (S.P j) (S.Q j), ¬ p ∣ n)).card : ℝ) / X) := by
+  obtain ⟨C_br, hC_br_pos, h_br⟩ := RangeSystem.integral_Tset_succ_le_unsifted_bridge hη0 hη
+  let C_main : ℝ := 4 * Real.exp 12 / Real.log 2
+  let C : ℝ := C_br * (max C_main 1)
+  have hC_pos : 0 < C := by
+    have h_max_pos : 0 < max C_main 1 := by
+      calc 0 < (1 : ℝ) := by norm_num
+        _ ≤ max C_main 1 := le_max_right _ _
+    exact mul_pos hC_br_pos h_max_pos
+  refine ⟨C, hC_pos, ?_⟩
+  intro J S hJ β X T₀ T j i hij hβ hβ1 hX hT0 hT _hTX hQX hH hP hloglogQ hQ4
+  have hij_lt : i < j := by
+    have : i.val < j.val := by omega
+    exact this
+  have hHj : 2 ≤ S.Hj hJ j ∧ S.Hj hJ j ≤ Real.sqrt (S.P j) := hH j
+  have hHi : 2 ≤ S.Hj hJ i := (hH i).1
+  have hPj : 2 ≤ Real.log (S.P j) := hP j
+  have hPi : 2 ≤ Real.log (S.P i) := hP i
+  have h_bridge := h_br J S hJ β X T₀ T j i hij_lt hβ hβ1 hX hT0 hT hQX hHj hHi hPj hPi hQ4
+  let H := S.Hj hJ j
+  let Hi := S.Hj hJ i
+  let Term1 := (H * Real.log (S.Q j)) * (S.Q i : ℝ) * (∑ v ∈ S.Ij hJ j, ∑ r ∈ S.Ij hJ i,
+    Real.exp (-2 * (alpha η (j.val + 1)) * v / H + 2 * ((ell v r H Hi : ℕ) : ℝ) * (alpha η (i.val + 1)) * r / Hi) *
+      ((8 : ℝ) ^ (ell v r H Hi) * (((ell v r H Hi + 1).factorial : ℝ)) ^ 2))
+  let A := (Real.log (S.Q ⟨0, hJ⟩)) ^ (1 / 3 : ℝ) / (((j.val + 1 : ℕ) : ℝ) ^ 2 * (S.P ⟨0, hJ⟩ : ℝ) ^ (1 / 6 - η))
+  let B := ((j.val + 1 : ℕ) : ℝ) ^ 6 / Real.sqrt (S.Q i)
+  let C_term := 1 / (S.P j : ℝ)
+  let D := (((Finset.Ioc X (2 * X)).filter (fun n => ∀ p ∈ primeRange (S.P j) (S.Q j), ¬ p ∣ n)).card : ℝ) / X
+  have h_prefactor := main_prefactor_le S hJ hη0 hη j i hij hHj.1 hHi hPj hPi hloglogQ
+  have hA_nonneg : 0 ≤ A := by positivity
+  have hB_nonneg : 0 ≤ B := by positivity
+  have hC_nonneg : 0 ≤ C_term := by positivity
+  have hD_nonneg : 0 ≤ D := by positivity
+  have h_sum_le : Term1 + A + C_term + D ≤ (max C_main 1) * (A + B + C_term + D) := by
+    calc Term1 + A + C_term + D
+      _ ≤ C_main * B + A + C_term + D := by linarith [h_prefactor]
+      _ ≤ (max C_main 1) * (A + B + C_term + D) := test_max_le A B C_term D C_main hA_nonneg hB_nonneg hC_nonneg hD_nonneg
+  have hTX_nonneg : 0 ≤ T / (X : ℝ) + 1 := by
+    have : 0 ≤ T / (X : ℝ) := div_nonneg (hT0.trans hT) (by positivity)
+    linarith
+  have h_final : C_br * (T / (X : ℝ) + 1) * (Term1 + A + C_term + D) ≤
+      C * (T / (X : ℝ) + 1) * (A + B + C_term + D) := by
+    calc C_br * (T / (X : ℝ) + 1) * (Term1 + A + C_term + D)
+      _ = (C_br * (T / (X : ℝ) + 1)) * (Term1 + A + C_term + D) := by ring
+      _ ≤ (C_br * (T / (X : ℝ) + 1)) * ((max C_main 1) * (A + B + C_term + D)) :=
+        mul_le_mul_of_nonneg_left h_sum_le (by positivity)
+      _ = (C_br * (max C_main 1)) * (T / (X : ℝ) + 1) * (A + B + C_term + D) := by ring
+      _ = C * (T / (X : ℝ) + 1) * (A + B + C_term + D) := rfl
+  calc ∫ t in S.Tset hJ β X T₀ T j, ‖Fu β X ((1 : ℂ) + t * Complex.I)‖ ^ 2
+    _ ≤ C_br * (T / (X : ℝ) + 1) * (Term1 + A + C_term + D) := h_bridge
+    _ ≤ C * (T / (X : ℝ) + 1) * (A + B + C_term + D) := h_final
+    _ = C * (T / X + 1) * (A + B + C_term + D) := by ring
+
+
+
 end Erdos1201.MR
 
