@@ -82,6 +82,7 @@ import Erdos1201.MR.Prop1.EjUnsifted
 import Erdos1201.MR.Vinogradov.BilinearEstimate
 import Erdos1201.MR.Prop1.RangeInstance
 import Erdos1201.MR.Prop1.MomentBridge
+import Erdos1201.MR.Analysis.HalaszPrimes
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules

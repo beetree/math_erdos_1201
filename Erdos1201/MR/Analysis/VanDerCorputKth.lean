@@ -862,5 +862,447 @@ theorem norm_sum_exp_neg_log_mul_I_le_pow_iterated_one_kth :
       ‖∑ n ∈ Finset.Ioc N M, Complex.exp (-((t * Real.log n : ℝ) : ℂ) * Complex.I)‖ ≤ C * (N : ℝ) ^ (1 - c) :=
   norm_sum_exp_neg_log_mul_I_le_pow_iterated_one_main
 
+/-- Second-derivative constant at depth $K_0$. -/
+noncomputable def second_const (K₀ : ℕ) : ℝ :=
+  Classical.choose (norm_vdc_S_le_second K₀)
+
+lemma second_const_pos (K₀ : ℕ) : 0 < second_const K₀ :=
+  (Classical.choose_spec (norm_vdc_S_le_second K₀)).1
+
+/-- Discrete $k$-th derivative constant at depth $K_0$ for $k \ge 2$. -/
+noncomputable def kth_const (K₀ k : ℕ) : ℝ :=
+  if hk : 2 ≤ k then
+    Classical.choose (norm_vdc_S_le_kth K₀ k hk)
+  else 1
+
+lemma kth_const_pos (K₀ k : ℕ) : 0 < kth_const K₀ k := by
+  dsimp [kth_const]
+  split_ifs with h
+  · exact (Classical.choose_spec (norm_vdc_S_le_kth K₀ k h)).1
+  · norm_num
+
+/-- Bound constant for scale $k \in [2, K_0]$. -/
+noncomputable def step_const (K₀ k : ℕ) : ℝ :=
+  if k = 2 then
+    let A2 := 1 / (2 * Real.pi)
+    second_const K₀ * (Real.sqrt A2 + A2 ^ (-(1 / 2 : ℝ)))
+  else if 2 ≤ k then
+    let A_k := ((k - 1).factorial : ℝ) / (2 * Real.pi)
+    let K_val := (2 : ℝ) ^ (k - 1)
+    let E_k := 1 / (2 * K_val - 2)
+    kth_const K₀ k * (A_k ^ E_k + A_k ^ (-E_k))
+  else 1
+
+lemma step_const_pos (K₀ k : ℕ) : 0 < step_const K₀ k := by
+  dsimp [step_const]
+  split_ifs
+  · have hA2 : 0 < 1 / (2 * Real.pi) := by positivity
+    have hs : 0 < Real.sqrt (1 / (2 * Real.pi)) := Real.sqrt_pos.mpr hA2
+    have hp : 0 < (1 / (2 * Real.pi)) ^ (-(1 / 2 : ℝ)) := by positivity
+    exact mul_pos (second_const_pos K₀) (add_pos hs hp)
+  · have hAk : 0 < ((k - 1).factorial : ℝ) / (2 * Real.pi) := by positivity
+    have hp1 : 0 < (((k - 1).factorial : ℝ) / (2 * Real.pi)) ^ (1 / (2 * (2 : ℝ) ^ (k - 1) - 2)) := by positivity
+    have hp2 : 0 < (((k - 1).factorial : ℝ) / (2 * Real.pi)) ^ (-(1 / (2 * (2 : ℝ) ^ (k - 1) - 2))) := by positivity
+    exact mul_pos (kth_const_pos K₀ k) (add_pos hp1 hp2)
+  · norm_num
+
+/-- Uniform constant for the iterated van der Corput exponential sum bound up to power $K$. -/
+noncomputable def vdc_iterated_const (K : ℕ) (hK : 1 ≤ K) : ℝ :=
+  have hs : (Finset.Icc 2 (K + 1)).Nonempty := Finset.nonempty_Icc.mpr (by omega)
+  (Finset.Icc 2 (K + 1)).sup' hs (step_const (K + 1))
+
+lemma vdc_iterated_const_pos (K : ℕ) (hK : 1 ≤ K) : 0 < vdc_iterated_const K hK := by
+  have hs : (Finset.Icc 2 (K + 1)).Nonempty := Finset.nonempty_Icc.mpr (by omega)
+  have h2 : 2 ∈ Finset.Icc 2 (K + 1) := by simp; omega
+  have hle := Finset.le_sup' (step_const (K + 1)) h2
+  exact (step_const_pos (K + 1) 2).trans_le hle
+
+lemma step_const_le_iterated (K : ℕ) (hK : 1 ≤ K) (k : ℕ) (hk : k ∈ Finset.Icc 2 (K + 1)) :
+    step_const (K + 1) k ≤ vdc_iterated_const K hK :=
+  Finset.le_sup' (step_const (K + 1)) hk
+
+lemma rpow_le_rpow_of_mul_le (A : ℝ) (hA : 0 ≤ A) (N : ℝ) (hN : 0 ≤ N) (a p : ℝ) (hp : 0 ≤ p)
+    (x : ℝ) (hx0 : 0 ≤ x) (hx : x ≤ A * N ^ a) :
+    x ^ p ≤ A ^ p * N ^ (a * p) := by
+  have h1 := Real.rpow_le_rpow hx0 hx hp
+  have h2 : (A * N ^ a) ^ p = A ^ p * (N ^ a) ^ p := Real.mul_rpow hA (Real.rpow_nonneg hN a)
+  have h3 : (N ^ a) ^ p = N ^ (a * p) := (Real.rpow_mul hN a p).symm
+  rw [h2, h3] at h1
+  exact h1
+
+lemma rpow_le_rpow_neg_of_le_mul (A : ℝ) (hA : 0 < A) (N : ℝ) (hN : 0 < N) (a p : ℝ) (hp : p ≤ 0)
+    (x : ℝ) (hx : A * N ^ a ≤ x) :
+    x ^ p ≤ A ^ p * N ^ (a * p) := by
+  have hbase_pos : 0 < A * N ^ a := mul_pos hA (Real.rpow_pos_of_pos hN a)
+  have h1 := Real.rpow_le_rpow_of_nonpos hbase_pos hx hp
+  have h2 : (A * N ^ a) ^ p = A ^ p * (N ^ a) ^ p := Real.mul_rpow hA.le (Real.rpow_nonneg hN.le a)
+  have h3 : (N ^ a) ^ p = N ^ (a * p) := (Real.rpow_mul hN.le a p).symm
+  rw [h2, h3] at h1
+  exact h1
+
+lemma mul_rpow_le_rpow_of_exp_le (N : ℝ) (hN : 1 ≤ N) (exp : ℝ) (A : ℝ) (hA : 0 ≤ A)
+    (x : ℝ) (hx : x ≤ A * N ^ exp) (c : ℝ) (hexp : exp ≤ 1 - c) :
+    x ≤ A * N ^ (1 - c) := by
+  refine hx.trans ?_
+  have : N ^ exp ≤ N ^ (1 - c) := Real.rpow_le_rpow_of_exponent_le hN hexp
+  exact mul_le_mul_of_nonneg_left this hA
+
+lemma c_le_three_twentieth (K : ℕ) (_hK : 1 ≤ K) :
+    let c := 1 / (30 * (2 : ℝ) ^ (K + 1))
+    1 - (3 / 20 : ℝ) ≤ 1 - c ∧ (13 / 20 : ℝ) ≤ 1 - c := by
+  intro c
+  have hK1 : 2 ≤ K + 1 := by omega
+  have hpow : (4 : ℝ) ≤ (2 : ℝ) ^ (K + 1) := by
+    calc (4 : ℝ) = (2 : ℝ) ^ 2 := by norm_num
+      _ ≤ (2 : ℝ) ^ (K + 1) := pow_le_pow_right₀ (by norm_num) hK1
+  have hc : c ≤ 1 / 120 := by
+    dsimp [c]
+    have : (120 : ℝ) ≤ 30 * (2 : ℝ) ^ (K + 1) := by linarith
+    exact one_div_le_one_div_of_le (by norm_num) this
+  constructor
+  · linarith
+  · linarith
+
+lemma c_le_kth_exponents (K k : ℕ) (hk3 : 3 ≤ k) (hkK : k ≤ K + 1) :
+    let c := 1 / (30 * (2 : ℝ) ^ (K + 1))
+    let K_val := (2 : ℝ) ^ (k - 1)
+    let E := 1 / (2 * K_val - 2)
+    1 + (- (3 / 10 : ℝ)) * E ≤ 1 - c ∧
+    (1 - 1 / K_val) + (- (13 / 10 : ℝ)) * (-E) ≤ 1 - c := by
+  intro c K_val E
+  have hk1_ge2 : 2 ≤ k - 1 := by omega
+  have hk1_leK : k - 1 ≤ K := by omega
+  have hK_val_ge4 : (4 : ℝ) ≤ K_val := by
+    dsimp [K_val]
+    calc (4 : ℝ) = (2 : ℝ) ^ 2 := by norm_num
+      _ ≤ (2 : ℝ) ^ (k - 1) := pow_le_pow_right₀ (by norm_num) hk1_ge2
+  have hK_val_le : K_val ≤ (2 : ℝ) ^ K := by
+    dsimp [K_val]
+    exact pow_le_pow_right₀ (by norm_num) hk1_leK
+  have hK1_pow : (2 : ℝ) ^ (K + 1) = 2 * (2 : ℝ) ^ K := by
+    rw [pow_succ]
+    ring
+  have hK_val_pos : 0 < K_val := by positivity
+  have hdenom1_pos : 0 < 2 * K_val - 2 := by linarith
+  have hKm1_pos : 0 < K_val - 1 := by linarith
+  have _hc_pos : 0 < c := by
+    dsimp [c]
+    positivity
+  have h_bound_c : c ≤ 1 / (60 * K_val) := by
+    dsimp [c]
+    rw [hK1_pow]
+    have : (60 * K_val) ≤ 30 * (2 * (2 : ℝ) ^ K) := by linarith
+    exact one_div_le_one_div_of_le (by positivity) this
+  constructor
+  · have hE_eq : (- (3 / 10 : ℝ)) * E = - (3 / (20 * (K_val - 1))) := by
+      dsimp [E]
+      have : 2 * K_val - 2 = 2 * (K_val - 1) := by ring
+      rw [this]
+      field_simp
+      ring
+    rw [hE_eq]
+    suffices c ≤ 3 / (20 * (K_val - 1)) by linarith
+    calc c ≤ 1 / (60 * K_val) := h_bound_c
+      _ ≤ 3 / (20 * (K_val - 1)) := by
+        have : (20 * (K_val - 1)) ≤ 3 * (60 * K_val) := by linarith
+        have h1 : 0 < 20 * (K_val - 1) := by linarith
+        have h2 : 0 < 60 * K_val := by linarith
+        rw [div_le_div_iff₀ h2 h1]
+        linarith
+  · have hE_eq : (- (13 / 10 : ℝ)) * (-E) = 13 / (20 * (K_val - 1)) := by
+      dsimp [E]
+      have : 2 * K_val - 2 = 2 * (K_val - 1) := by ring
+      rw [this]
+      field_simp
+      ring
+    rw [hE_eq]
+    have h_alg : (1 - 1 / K_val) + 13 / (20 * (K_val - 1)) =
+        1 - (7 * K_val - 20) / (20 * K_val * (K_val - 1)) := by
+      have : K_val ≠ 0 := hK_val_pos.ne'
+      have : K_val - 1 ≠ 0 := hKm1_pos.ne'
+      field_simp
+      ring
+    rw [h_alg]
+    suffices c ≤ (7 * K_val - 20) / (20 * K_val * (K_val - 1)) by linarith
+    have hnum : 2 * K_val ≤ 7 * K_val - 20 := by linarith
+    have h_le_step : 1 / (10 * (K_val - 1)) ≤ (7 * K_val - 20) / (20 * K_val * (K_val - 1)) := by
+      have h1 : (2 * K_val) / (20 * K_val * (K_val - 1)) = 1 / (10 * (K_val - 1)) := by
+        have : (2 * K_val) / (20 * K_val * (K_val - 1)) =
+            (2 * K_val * 1) / (2 * K_val * (10 * (K_val - 1))) := by ring
+        rw [this, mul_div_mul_left _ _ (by positivity : 2 * K_val ≠ 0)]
+      rw [← h1]
+      have hden : 0 < 20 * K_val * (K_val - 1) := by positivity
+      exact div_le_div_of_nonneg_right hnum hden.le
+    refine le_trans ?_ h_le_step
+    calc c ≤ 1 / (60 * K_val) := h_bound_c
+      _ ≤ 1 / (10 * (K_val - 1)) := by
+        have : 10 * (K_val - 1) ≤ 60 * K_val := by linarith
+        have h1 : 0 < 10 * (K_val - 1) := by linarith
+        exact one_div_le_one_div_of_le h1 this
+
+lemma vdc_bound_k_two (K : ℕ) (hK : 1 ≤ K) (N M : ℕ) (t : ℝ)
+    (hN : 2 ≤ N) (hNM : N < M) (hM : M ≤ 2 * N) (htN : (N : ℝ) ≤ t) (htK : t ≤ (N : ℝ) ^ K)
+    (hk2 : Nat.floor (Real.log t / Real.log (N : ℝ) + 3 / 10) + 1 = 2) :
+    let c := 1 / (30 * (2 : ℝ) ^ (K + 1))
+    let C := vdc_iterated_const K hK
+    ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤ C * (N : ℝ) ^ (1 - c) := by
+  intro c C
+  set r := Real.log t / Real.log (N : ℝ)
+  have h_bounds := floor_log_bounds N hN t K hK htN htK
+  dsimp [r] at h_bounds
+  have hr_low : (2 : ℝ) - 13 / 10 ≤ r := by
+    have := h_bounds.2.2.1
+    rw [hk2] at this
+    exact this
+  have hr_high : r ≤ (2 : ℝ) - 3 / 10 := by
+    have := h_bounds.2.2.2
+    rw [hk2] at this
+    exact this.le
+  have ht_pos : 0 < t := by
+    have : 0 < (N : ℝ) := by positivity
+    linarith
+  have ht_pow := t_div_pow_bounds N hN t 2 r rfl ht_pos hr_low hr_high
+  set lam := vdcLam t 0 (fun x => x.elim0) N 2
+  have hlam_eq : lam = (1 / (2 * Real.pi)) * (t / (N : ℝ) ^ 2) := by
+    dsimp [lam]
+    rw [vdcLam_zero]
+    ring
+  have hA2_pos : 0 < 1 / (2 * Real.pi) := by positivity
+  have hlam_pos : 0 < lam := by
+    rw [hlam_eq]
+    positivity
+  have hlam_low : (1 / (2 * Real.pi)) * (N : ℝ) ^ (- (13 / 10 : ℝ)) ≤ lam := by
+    rw [hlam_eq]
+    exact mul_le_mul_of_nonneg_left ht_pow.1 hA2_pos.le
+  have hlam_high : lam ≤ (1 / (2 * Real.pi)) * (N : ℝ) ^ (- (3 / 10 : ℝ)) := by
+    rw [hlam_eq]
+    exact mul_le_mul_of_nonneg_left ht_pow.2 hA2_pos.le
+  set C2 := second_const (K + 1)
+  have hC2_spec := (Classical.choose_spec (norm_vdc_S_le_second (K + 1))).2
+  have h_sum_le := hC2_spec t 0 (fun x => x.elim0) N N M ht_pos (by omega)
+    (fun i => i.elim0) (fun i => i.elim0) hN (le_refl N) hNM.le hM
+  change ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤ C2 * ((N : ℝ) * Real.sqrt lam + 1 / Real.sqrt lam) at h_sum_le
+  have h_sqrt_lam : Real.sqrt lam = lam ^ (1 / 2 : ℝ) := Real.sqrt_eq_rpow lam
+  rw [h_sqrt_lam] at h_sum_le
+  have h_inv_sqrt : 1 / lam ^ (1 / 2 : ℝ) = lam ^ (- (1 / 2 : ℝ)) := by
+    rw [Real.rpow_neg hlam_pos.le, one_div]
+  rw [h_inv_sqrt] at h_sum_le
+  have hN_pos : 0 < (N : ℝ) := by positivity
+  have hN_ge1 : 1 ≤ (N : ℝ) := by
+    have : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+    linarith
+  have hc_exps := c_le_three_twentieth K hK
+  have h_term1_rpow : lam ^ (1 / 2 : ℝ) ≤
+      (1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) * (N : ℝ) ^ ((- (3 / 10 : ℝ)) * (1 / 2 : ℝ)) :=
+    rpow_le_rpow_of_mul_le (1 / (2 * Real.pi)) hA2_pos.le (N : ℝ) hN_pos.le (- (3 / 10 : ℝ))
+      (1 / 2 : ℝ) (by norm_num) lam hlam_pos.le hlam_high
+  have h_exp1_num : (- (3 / 10 : ℝ)) * (1 / 2 : ℝ) = - (3 / 20 : ℝ) := by ring
+  rw [h_exp1_num] at h_term1_rpow
+  have h_term1_mul : (N : ℝ) * lam ^ (1 / 2 : ℝ) ≤
+      (1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) * (N : ℝ) ^ (1 - (3 / 20 : ℝ)) := by
+    calc (N : ℝ) * lam ^ (1 / 2 : ℝ) ≤ (N : ℝ) * ((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) * (N : ℝ) ^ (- (3 / 20 : ℝ))) :=
+           mul_le_mul_of_nonneg_left h_term1_rpow hN_pos.le
+      _ = (1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) * ((N : ℝ) * (N : ℝ) ^ (- (3 / 20 : ℝ))) := by ring
+      _ = (1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) * (N : ℝ) ^ (1 - (3 / 20 : ℝ)) := by
+        have h_N_mul : (N : ℝ) * (N : ℝ) ^ (- (3 / 20 : ℝ)) = (N : ℝ) ^ (1 - (3 / 20 : ℝ)) := by
+          calc (N : ℝ) * (N : ℝ) ^ (- (3 / 20 : ℝ)) = (N : ℝ) ^ (1 : ℝ) * (N : ℝ) ^ (- (3 / 20 : ℝ)) := by rw [Real.rpow_one]
+            _ = (N : ℝ) ^ (1 + - (3 / 20 : ℝ)) := by rw [← Real.rpow_add hN_pos]
+            _ = (N : ℝ) ^ (1 - (3 / 20 : ℝ)) := by ring_nf
+        rw [h_N_mul]
+  have hA2_half_nonneg : 0 ≤ (1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) := by positivity
+  have h_term1_final : (N : ℝ) * lam ^ (1 / 2 : ℝ) ≤
+      (1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) * (N : ℝ) ^ (1 - c) :=
+    mul_rpow_le_rpow_of_exp_le (N : ℝ) hN_ge1 (1 - 3 / 20) ((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ))
+      hA2_half_nonneg ((N : ℝ) * lam ^ (1 / 2 : ℝ)) h_term1_mul c hc_exps.1
+  have h_term2_rpow : lam ^ (- (1 / 2 : ℝ)) ≤
+      (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ)) * (N : ℝ) ^ ((- (13 / 10 : ℝ)) * (- (1 / 2 : ℝ))) :=
+    rpow_le_rpow_neg_of_le_mul (1 / (2 * Real.pi)) hA2_pos (N : ℝ) hN_pos (- (13 / 10 : ℝ))
+      (- (1 / 2 : ℝ)) (by norm_num) lam hlam_low
+  have h_exp2_num : (- (13 / 10 : ℝ)) * (- (1 / 2 : ℝ)) = (13 / 20 : ℝ) := by ring
+  rw [h_exp2_num] at h_term2_rpow
+  have hA2_neghalf_nonneg : 0 ≤ (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ)) := by positivity
+  have h_term2_final : lam ^ (- (1 / 2 : ℝ)) ≤
+      (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ)) * (N : ℝ) ^ (1 - c) :=
+    mul_rpow_le_rpow_of_exp_le (N : ℝ) hN_ge1 (13 / 20) ((1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ)))
+      hA2_neghalf_nonneg (lam ^ (- (1 / 2 : ℝ))) h_term2_rpow c hc_exps.2
+  have h_sum_bracket : (N : ℝ) * lam ^ (1 / 2 : ℝ) + lam ^ (- (1 / 2 : ℝ)) ≤
+      ((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) + (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ))) * (N : ℝ) ^ (1 - c) := by
+    calc (N : ℝ) * lam ^ (1 / 2 : ℝ) + lam ^ (- (1 / 2 : ℝ)) ≤
+           (1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) * (N : ℝ) ^ (1 - c) + (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ)) * (N : ℝ) ^ (1 - c) :=
+             add_le_add h_term1_final h_term2_final
+      _ = ((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) + (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ))) * (N : ℝ) ^ (1 - c) := by ring
+  have h_total : ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤
+      (second_const (K + 1) * ((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) + (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ)))) *
+      (N : ℝ) ^ (1 - c) := by
+    calc ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤ C2 * ((N : ℝ) * lam ^ (1 / 2 : ℝ) + lam ^ (- (1 / 2 : ℝ))) := h_sum_le
+      _ ≤ C2 * (((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) + (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ))) * (N : ℝ) ^ (1 - c)) :=
+        mul_le_mul_of_nonneg_left h_sum_bracket (second_const_pos (K + 1)).le
+      _ = (second_const (K + 1) * ((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) + (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ)))) * (N : ℝ) ^ (1 - c) := by ring
+  have h_step2 : step_const (K + 1) 2 =
+      second_const (K + 1) * ((1 / (2 * Real.pi)) ^ (1 / 2 : ℝ) + (1 / (2 * Real.pi)) ^ (- (1 / 2 : ℝ))) := by
+    dsimp [step_const]
+    congr 2
+    exact Real.sqrt_eq_rpow (1 / (2 * Real.pi))
+  rw [← h_step2] at h_total
+  have h2_mem : 2 ∈ Finset.Icc 2 (K + 1) := by simp; omega
+  have h_step_le_C : step_const (K + 1) 2 ≤ C := step_const_le_iterated K hK 2 h2_mem
+  have hN_rpow_pos : 0 ≤ (N : ℝ) ^ (1 - c) := Real.rpow_nonneg hN_pos.le (1 - c)
+  refine h_total.trans ?_
+  exact mul_le_mul_of_nonneg_right h_step_le_C hN_rpow_pos
+
+lemma vdc_bound_k_of_three_le (K : ℕ) (hK : 1 ≤ K) (N M : ℕ) (t : ℝ)
+    (hN : 2 ≤ N) (hNM : N < M) (hM : M ≤ 2 * N) (htN : (N : ℝ) ≤ t) (htK : t ≤ (N : ℝ) ^ K)
+    (k : ℕ) (hk : Nat.floor (Real.log t / Real.log (N : ℝ) + 3 / 10) + 1 = k) (hk3 : 3 ≤ k) :
+    let c := 1 / (30 * (2 : ℝ) ^ (K + 1))
+    let C := vdc_iterated_const K hK
+    ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤ C * (N : ℝ) ^ (1 - c) := by
+  intro c C
+  set r := Real.log t / Real.log (N : ℝ)
+  have h_bounds := floor_log_bounds N hN t K hK htN htK
+  dsimp [r] at h_bounds
+  have hkK : k ≤ K + 1 := by
+    have := h_bounds.2.1
+    rw [hk] at this
+    exact this
+  have hk2 : 2 ≤ k := by omega
+  have hr_low : (k : ℝ) - 13 / 10 ≤ r := by
+    have := h_bounds.2.2.1
+    rw [hk] at this
+    exact this
+  have hr_high : r ≤ (k : ℝ) - 3 / 10 := by
+    have := h_bounds.2.2.2
+    rw [hk] at this
+    exact this.le
+  have ht_pos : 0 < t := by
+    have : 0 < (N : ℝ) := by positivity
+    linarith
+  have ht_pow := t_div_pow_bounds N hN t k r rfl ht_pos hr_low hr_high
+  set lam := vdcLam t 0 (fun x => x.elim0) N k
+  set Ak := ((k - 1).factorial : ℝ) / (2 * Real.pi)
+  have hlam_eq : lam = Ak * (t / (N : ℝ) ^ k) := by
+    dsimp [lam, Ak]
+    rw [vdcLam_zero]
+    ring
+  have hAk_pos : 0 < Ak := by
+    dsimp [Ak]
+    positivity
+  have hlam_pos : 0 < lam := by
+    rw [hlam_eq]
+    positivity
+  have hlam_low : Ak * (N : ℝ) ^ (- (13 / 10 : ℝ)) ≤ lam := by
+    rw [hlam_eq]
+    exact mul_le_mul_of_nonneg_left ht_pow.1 hAk_pos.le
+  have hlam_high : lam ≤ Ak * (N : ℝ) ^ (- (3 / 10 : ℝ)) := by
+    rw [hlam_eq]
+    exact mul_le_mul_of_nonneg_left ht_pow.2 hAk_pos.le
+  set K_val := (2 : ℝ) ^ (k - 1)
+  set E := 1 / (2 * K_val - 2)
+  have hk_const_eq : kth_const (K + 1) k = Classical.choose (norm_vdc_S_le_kth (K + 1) k hk2) := by
+    dsimp [kth_const]
+    split_ifs
+    rfl
+  have hk_spec := (Classical.choose_spec (norm_vdc_S_le_kth (K + 1) k hk2)).2
+  have h_sum_le := hk_spec t 0 (fun x => x.elim0) N N M ht_pos (by omega)
+    (fun i => i.elim0) (fun i => i.elim0) hN (le_refl N) hNM.le hM
+  change ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤
+    Classical.choose (norm_vdc_S_le_kth (K + 1) k hk2) *
+      ((N : ℝ) * lam ^ E + (N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E)) at h_sum_le
+  rw [← hk_const_eq] at h_sum_le
+  have hN_pos : 0 < (N : ℝ) := by positivity
+  have hN_ge1 : 1 ≤ (N : ℝ) := by
+    have : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+    linarith
+  have _hK_val_ge4 : (4 : ℝ) ≤ K_val := by
+    dsimp [K_val]
+    have : 2 ≤ k - 1 := by omega
+    calc (4 : ℝ) = (2 : ℝ) ^ 2 := by norm_num
+      _ ≤ (2 : ℝ) ^ (k - 1) := pow_le_pow_right₀ (by norm_num) this
+  have hE_pos : 0 < E := by
+    dsimp [E]
+    have : 0 < 2 * K_val - 2 := by linarith [_hK_val_ge4]
+    exact one_div_pos.mpr this
+  have hc_exps := c_le_kth_exponents K k hk3 hkK
+  have h_term1_rpow : lam ^ E ≤ Ak ^ E * (N : ℝ) ^ ((- (3 / 10 : ℝ)) * E) :=
+    rpow_le_rpow_of_mul_le Ak hAk_pos.le (N : ℝ) hN_pos.le (- (3 / 10 : ℝ))
+      E hE_pos.le lam hlam_pos.le hlam_high
+  have h_term1_mul : (N : ℝ) * lam ^ E ≤ Ak ^ E * (N : ℝ) ^ (1 + (- (3 / 10 : ℝ)) * E) := by
+    calc (N : ℝ) * lam ^ E ≤ (N : ℝ) * (Ak ^ E * (N : ℝ) ^ ((- (3 / 10 : ℝ)) * E)) :=
+           mul_le_mul_of_nonneg_left h_term1_rpow hN_pos.le
+      _ = Ak ^ E * ((N : ℝ) * (N : ℝ) ^ ((- (3 / 10 : ℝ)) * E)) := by ring
+      _ = Ak ^ E * (N : ℝ) ^ (1 + (- (3 / 10 : ℝ)) * E) := by
+        have h_N_mul : (N : ℝ) * (N : ℝ) ^ ((- (3 / 10 : ℝ)) * E) = (N : ℝ) ^ (1 + (- (3 / 10 : ℝ)) * E) := by
+          calc (N : ℝ) * (N : ℝ) ^ ((- (3 / 10 : ℝ)) * E) = (N : ℝ) ^ (1 : ℝ) * (N : ℝ) ^ ((- (3 / 10 : ℝ)) * E) := by rw [Real.rpow_one]
+            _ = (N : ℝ) ^ ((1 : ℝ) + (- (3 / 10 : ℝ)) * E) := by rw [← Real.rpow_add hN_pos]
+        rw [h_N_mul]
+  have hAk_E_nonneg : 0 ≤ Ak ^ E := Real.rpow_nonneg hAk_pos.le E
+  have h_term1_final : (N : ℝ) * lam ^ E ≤ Ak ^ E * (N : ℝ) ^ (1 - c) :=
+    mul_rpow_le_rpow_of_exp_le (N : ℝ) hN_ge1 (1 + (- (3 / 10 : ℝ)) * E) (Ak ^ E)
+      hAk_E_nonneg ((N : ℝ) * lam ^ E) h_term1_mul c hc_exps.1
+  have h_neg_E : -E ≤ 0 := by linarith
+  have h_term2_rpow : lam ^ (-E) ≤ Ak ^ (-E) * (N : ℝ) ^ ((- (13 / 10 : ℝ)) * (-E)) :=
+    rpow_le_rpow_neg_of_le_mul Ak hAk_pos (N : ℝ) hN_pos (- (13 / 10 : ℝ))
+      (-E) h_neg_E lam hlam_low
+  have h_term2_mul : (N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E) ≤
+      Ak ^ (-E) * (N : ℝ) ^ ((1 - 1 / K_val) + (- (13 / 10 : ℝ)) * (-E)) := by
+    have h_coeff_nonneg : 0 ≤ (N : ℝ) ^ (1 - 1 / K_val) := by positivity
+    calc (N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E) ≤
+           (N : ℝ) ^ (1 - 1 / K_val) * (Ak ^ (-E) * (N : ℝ) ^ ((- (13 / 10 : ℝ)) * (-E))) :=
+             mul_le_mul_of_nonneg_left h_term2_rpow h_coeff_nonneg
+      _ = Ak ^ (-E) * ((N : ℝ) ^ (1 - 1 / K_val) * (N : ℝ) ^ ((- (13 / 10 : ℝ)) * (-E))) := by ring
+      _ = Ak ^ (-E) * (N : ℝ) ^ ((1 - 1 / K_val) + (- (13 / 10 : ℝ)) * (-E)) := by
+        rw [← Real.rpow_add hN_pos]
+  have hAk_negE_nonneg : 0 ≤ Ak ^ (-E) := Real.rpow_nonneg hAk_pos.le (-E)
+  have h_term2_final : (N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E) ≤ Ak ^ (-E) * (N : ℝ) ^ (1 - c) :=
+    mul_rpow_le_rpow_of_exp_le (N : ℝ) hN_ge1 ((1 - 1 / K_val) + (- (13 / 10 : ℝ)) * (-E)) (Ak ^ (-E))
+      hAk_negE_nonneg ((N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E)) h_term2_mul c hc_exps.2
+  have h_sum_bracket : (N : ℝ) * lam ^ E + (N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E) ≤
+      (Ak ^ E + Ak ^ (-E)) * (N : ℝ) ^ (1 - c) := by
+    calc (N : ℝ) * lam ^ E + (N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E) ≤
+           Ak ^ E * (N : ℝ) ^ (1 - c) + Ak ^ (-E) * (N : ℝ) ^ (1 - c) :=
+             add_le_add h_term1_final h_term2_final
+      _ = (Ak ^ E + Ak ^ (-E)) * (N : ℝ) ^ (1 - c) := by ring
+  have h_total : ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤
+      (kth_const (K + 1) k * (Ak ^ E + Ak ^ (-E))) * (N : ℝ) ^ (1 - c) := by
+    calc ‖vdc_S t 0 (fun x => x.elim0) N M‖ ≤
+           kth_const (K + 1) k * ((N : ℝ) * lam ^ E + (N : ℝ) ^ (1 - 1 / K_val) * lam ^ (-E)) := h_sum_le
+      _ ≤ kth_const (K + 1) k * ((Ak ^ E + Ak ^ (-E)) * (N : ℝ) ^ (1 - c)) :=
+        mul_le_mul_of_nonneg_left h_sum_bracket (kth_const_pos (K + 1) k).le
+      _ = (kth_const (K + 1) k * (Ak ^ E + Ak ^ (-E))) * (N : ℝ) ^ (1 - c) := by ring
+  have h_step_k : step_const (K + 1) k = kth_const (K + 1) k * (Ak ^ E + Ak ^ (-E)) := by
+    dsimp [step_const]
+    split_ifs with h2
+    · omega
+    · rfl
+  rw [← h_step_k] at h_total
+  have hk_mem : k ∈ Finset.Icc 2 (K + 1) := by simp; omega
+  have h_step_le_C : step_const (K + 1) k ≤ C := step_const_le_iterated K hK k hk_mem
+  have hN_rpow_pos : 0 ≤ (N : ℝ) ^ (1 - c) := Real.rpow_nonneg hN_pos.le (1 - c)
+  refine h_total.trans ?_
+  exact mul_le_mul_of_nonneg_right h_step_le_C hN_rpow_pos
+
+/-- Iterated van der Corput exponential sum bound on dyadic blocks for general $K \ge 1$. -/
+theorem norm_sum_exp_neg_log_mul_I_le_pow_iterated (K : ℕ) (hK : 1 ≤ K) :
+    ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ (N M : ℕ) (t : ℝ), 2 ≤ N → N < M → M ≤ 2 * N → (N : ℝ) ≤ t → t ≤ (N : ℝ) ^ K →
+      ‖∑ n ∈ Finset.Ioc N M, Complex.exp (-((t * Real.log n : ℝ) : ℂ) * Complex.I)‖ ≤ C * (N : ℝ) ^ (1 - c) := by
+  set c := 1 / (30 * (2 : ℝ) ^ (K + 1))
+  set C := vdc_iterated_const K hK
+  refine ⟨c, C, ?_, vdc_iterated_const_pos K hK, ?_⟩
+  · dsimp [c]; positivity
+  intro N M t hN hNM hM htN htK
+  have ht_pos : 0 < t := by
+    have : 0 < (N : ℝ) := by positivity
+    linarith
+  have h_rw := (vdc_S_zero_eq t N M).symm
+  rw [h_rw]
+  set r := Real.log t / Real.log (N : ℝ)
+  set k := Nat.floor (r + 3 / 10) + 1
+  have h_bounds := floor_log_bounds N hN t K hK htN htK
+  by_cases hk2 : k = 2
+  · exact vdc_bound_k_two K hK N M t hN hNM hM htN htK hk2
+  · have hk3 : 3 ≤ k := by
+      have : 2 ≤ k := h_bounds.1
+      omega
+    exact vdc_bound_k_of_three_le K hK N M t hN hNM hM htN htK k rfl hk3
+
 end Erdos1201.MR
 
