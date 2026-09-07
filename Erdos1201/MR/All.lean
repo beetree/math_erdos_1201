@@ -85,6 +85,7 @@ import Erdos1201.MR.Prop1.MomentBridge
 import Erdos1201.MR.Analysis.HalaszPrimes
 import Erdos1201.MR.Twisted.TwistedPsi
 import Erdos1201.MR.Vinogradov.ZetaBound
+import Erdos1201.MR.Vinogradov.ZeroFreeInstance
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules
