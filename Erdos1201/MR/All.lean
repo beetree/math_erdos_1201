@@ -89,6 +89,7 @@ import Erdos1201.MR.Vinogradov.ZeroFreeInstance
 import Erdos1201.MR.Twisted.TwistedPrimeSumsFinal
 import Erdos1201.MR.Prop1.UsetRBound
 import Erdos1201.MR.Prop1.UsetLarge
+import Erdos1201.MR.Prop1.UsetAssembly
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules
