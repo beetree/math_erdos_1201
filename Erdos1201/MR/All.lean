@@ -63,6 +63,9 @@ import Erdos1201.MR.Parseval.Lemma14
 import Erdos1201.MR.Prop1.E1
 import Erdos1201.MR.Vinogradov.HolderRestriction
 import Erdos1201.MR.Analysis.LogIteratedDifferences
+import Erdos1201.MR.Analysis.VanDerCorputIteratedMain
+import Erdos1201.MR.Vinogradov.CongruencingStep
+import Erdos1201.MR.Twisted.TwistedContour
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules
