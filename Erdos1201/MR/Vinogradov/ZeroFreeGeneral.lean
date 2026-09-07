@@ -561,6 +561,48 @@ theorem zeta_lower_bound_general (σ t : ℝ) (hσ : 1 < σ) :
           have h_re : (σ + t * Complex.I).re = σ := by simp
           rwa [h_re] at h_ineq
 
+/-- The real part of $\zeta(x)$ for real $x > 1$ is at least $1$. -/
+lemma one_le_zeta_ofReal (x : ℝ) (hx : 1 < x) : 1 ≤ (riemannZeta (x : ℂ)).re := by
+  have hxC : 1 < (Complex.ofReal x).re := by simpa [Complex.ofReal_re] using hx
+  have hz : riemannZeta (x : ℂ) = ∑' n : ℕ, 1 / (n + 1 : ℂ) ^ (x : ℂ) :=
+    zeta_eq_tsum_one_div_nat_add_one_cpow (s := (x : ℂ)) hxC
+  have hre : (riemannZeta (x : ℂ)).re = ∑' n : ℕ, 1 / ((n + 1 : ℝ) ^ x) := by
+    simpa [hz, term_eq_ofRealC x] using
+      (re_tsum_ofReal (fun n : ℕ => 1 / ((n + 1 : ℝ) ^ x)))
+  rw [hre]
+  have hsum : Summable (fun n : ℕ => 1 / ((n + 1 : ℝ) ^ x)) :=
+    summable_one_div_nat_add_rpow' (x := x) hx
+  have hnonneg : ∀ n : ℕ, 0 ≤ 1 / ((n + 1 : ℝ) ^ x) := terms_nonneg x
+  have hrange : ∑ n ∈ Finset.range 1, (1 : ℝ) / ((n + 1 : ℝ) ^ x) = 1 := by
+    simp
+  have hnonneg' : ∀ n ∉ Finset.range 1, 0 ≤ (1 : ℝ) / ((n + 1 : ℝ) ^ x) := fun n _ => hnonneg n
+  have hsumle := hsum.sum_le_tsum (s := Finset.range 1) hnonneg'
+  rwa [hrange] at hsumle
+
+/-- The norm of $\zeta(x)$ for real $x > 1$ is at least $1$. -/
+lemma one_le_norm_zeta_ofReal (x : ℝ) (hx : 1 < x) : 1 ≤ norm (riemannZeta (x : ℂ)) := by
+  have hre := one_le_zeta_ofReal x hx
+  have := Complex.re_le_norm (riemannZeta (x : ℂ))
+  linarith
+
+/-- Explicit unconditional lower bound $1 / \|\zeta(\sigma)\| \le \|\zeta(\sigma + it)\|$ for any $\sigma > 1$. -/
+theorem inv_norm_zeta_le_norm_zeta (σ t : ℝ) (hσ : 1 < σ) :
+    1 / norm (riemannZeta (σ : ℂ)) ≤ norm (riemannZeta (σ + t * Complex.I)) := by
+  have h2σ : 1 < 2 * σ := by linarith
+  have h1 : 1 ≤ norm (riemannZeta (2 * σ : ℝ)) := one_le_norm_zeta_ofReal (2 * σ) h2σ
+  have hpos_σ : 0 < norm (riemannZeta (σ : ℂ)) := by
+    apply norm_pos_iff.mpr
+    apply riemannZeta_ne_zero_of_one_lt_re
+    simp [hσ]
+  have h_div_le : 1 / norm (riemannZeta (σ : ℂ)) ≤ norm (riemannZeta (2 * σ : ℝ)) / norm (riemannZeta (σ : ℂ)) := by
+    exact div_le_div_of_nonneg_right h1 (le_of_lt hpos_σ)
+  have h_ratio_norm : norm (riemannZeta (2 * σ : ℝ)) / norm (riemannZeta (σ : ℂ)) =
+      norm (riemannZeta (2 * σ : ℝ) / riemannZeta (σ : ℂ)) := by
+    rw [norm_div]
+  rw [h_ratio_norm] at h_div_le
+  exact le_trans h_div_le (zeta_lower_bound_general σ t hσ)
+
+
 /-- Strict upper bound on $\zeta(z)$ along the full geometric disk of radius $7\theta(t)/8$,
 using local regularity of $\theta$ and $\varphi$ at heights near $t$. -/
 lemma zeta_bound_on_disk_general (θ φ : ℝ → ℝ)
@@ -733,6 +775,87 @@ lemma neg_re_logDeriv_le_single (z ρ₀ : ℂ) (S : Finset ℂ) (E : ℝ)
   have h2 := re_sum_zeros_ge_single S z ρ₀ hmem hz him hm
   linarith
 
+/-- The positive geometric constant in the Borel–Carathéodory logarithmic derivative expansion. -/
+noncomputable def K_geom : ℝ := 3200 + 48 / (13 * Real.log (7 / 6))
+
+/-- Positivity of the geometric factor $K_{\mathrm{geom}} > 0$. -/
+lemma K_geom_pos : 0 < K_geom := by
+  have h76 : (1 : ℝ) < 7 / 6 := by norm_num
+  have hlog : 0 < Real.log (7 / 6) := Real.log_pos h76
+  have h13 : 0 < (13 : ℝ) := by norm_num
+  have hden : 0 < 13 * Real.log (7 / 6) := mul_pos h13 hlog
+  have hfrac : 0 < 48 / (13 * Real.log (7 / 6)) := div_pos (by norm_num) hden
+  have : 0 < (3200 : ℝ) := by norm_num
+  exact add_pos this hfrac
+
+/-- Exact algebraic evaluation of the geometric coefficient in `log_Deriv_Expansion_Zeta_general`
+with radii $r_1 = \theta/2, r = 5\theta/8, R_1 = 3\theta/4, R = 7\theta/8$. -/
+lemma geom_factor_eval (θ : ℝ) (hθpos : 0 < θ) :
+    let r1 := θ / 2
+    let r := 5 * θ / 8
+    let R1 := 3 * θ / 4
+    let R := 7 * θ / 8
+    16 * r^2 / ((r - r1)^3) + 1 / ((R^2 / R1 - R1) * Real.log (R / R1)) = K_geom / θ := by
+  intro r1 r R1 R
+  have hθne : θ ≠ 0 := ne_of_gt hθpos
+  have hlog_ne : Real.log (7 / 6) ≠ 0 := by
+    apply ne_of_gt
+    exact Real.log_pos (by norm_num)
+  have h1 : 16 * r^2 / ((r - r1)^3) = 3200 / θ := by
+    dsimp [r, r1]
+    have hdiff : 5 * θ / 8 - θ / 2 = θ / 8 := by linarith
+    rw [hdiff]
+    have : (θ / 8)^3 = θ^3 / 512 := by ring
+    rw [this]
+    have : (5 * θ / 8)^2 = 25 * θ^2 / 64 := by ring
+    rw [this]
+    field_simp
+    norm_num
+  have h2 : 1 / ((R^2 / R1 - R1) * Real.log (R / R1)) = (48 / (13 * Real.log (7 / 6))) / θ := by
+    dsimp [R, R1]
+    have hR_div : (7 * θ / 8) / (3 * θ / 4) = 7 / 6 := by
+      field_simp
+      norm_num
+    have hdiff : (7 * θ / 8)^2 / (3 * θ / 4) - 3 * θ / 4 = 13 * θ / 48 := by
+      field_simp
+      ring
+    rw [hR_div, hdiff]
+    field_simp
+  dsimp [K_geom]
+  rw [h1, h2, ← add_div]
+
+/-- Strict ordering of the nested disk radii for any $\theta \in (0, 1/2]$. -/
+lemma geom_radii_bounds (θ : ℝ) (hθpos : 0 < θ) (hθle : θ ≤ 1 / 2) :
+    let r1 := θ / 2
+    let r := 5 * θ / 8
+    let R1 := 3 * θ / 4
+    let R := 7 * θ / 8
+    0 < r1 ∧ r1 < r ∧ 0 < r ∧ r < R1 ∧ 0 < R1 ∧ R1 < R ∧ R < 1 := by
+  dsimp
+  refine ⟨by linarith, by linarith, by linarith, by linarith, by linarith, by linarith, by linarith⟩
+
+/-- Classical residue bound at the pole $s = 1$: $(-(\zeta'/\zeta)(1+\delta)).\mathrm{re} \le 1/\delta + C_0$. -/
+lemma neg_re_logDeriv_pole_bound :
+    ∃ C₀ > 1, ∀ (δ : ℝ), 0 < δ → (-logDerivZeta ((1 : ℂ) + δ)).re ≤ 1 / δ + C₀ := by
+  rcases Z0boundRe_const3 with ⟨C₀, hC₀gt1, hC₀⟩
+  use C₀, hC₀gt1
+  intro δ hδ
+  have := hC₀ δ hδ
+  linarith
+
+/-- Recombination of the 3-4-1 trigonometric inequality $0 \le 3 Z_0 + 4 Z_1 + Z_2$
+into the fundamental zero-free region inequality. -/
+lemma trig_341_inequality_combine (δ t : ℝ) (hδ : 0 < δ) (σ : ℝ) (C₀ Et E2t : ℝ)
+    (hZ0 : (-logDerivZeta ((1 : ℂ) + δ)).re ≤ 1 / δ + C₀)
+    (hZ1 : (-logDerivZeta ((1 : ℂ) + δ + t * Complex.I)).re ≤ - (1 / (1 + δ - σ)) + Et)
+    (hZ2 : (-logDerivZeta ((1 : ℂ) + δ + (2 * t) * Complex.I)).re ≤ E2t) :
+    0 ≤ 3 / δ - 4 / (1 + δ - σ) + (3 * C₀ + 4 * Et + E2t) := by
+  have hpos := Z341pos t δ hδ
+  have h3 : 3 / δ = 3 * (1 / δ) := by ring
+  have h4 : 4 / (1 + δ - σ) = 4 * (1 / (1 + δ - σ)) := by ring
+  rw [h3, h4]
+  linarith
+
 end Erdos1201.MR.Vinogradov
 
 namespace Erdos1201.MR
@@ -762,6 +885,9 @@ export Erdos1201.MR.Vinogradov (
   term_bound2
   abs_zeta_ratio_eval_general
   zeta_lower_bound_general
+  one_le_zeta_ofReal
+  one_le_norm_zeta_ofReal
+  inv_norm_zeta_le_norm_zeta
   zeta_bound_on_disk_general
   re_div_zero_pos
   re_div_same_im
@@ -770,6 +896,12 @@ export Erdos1201.MR.Vinogradov (
   neg_re_logDeriv_le_sum_bound
   neg_re_logDeriv_le_of_nonneg
   neg_re_logDeriv_le_single
+  K_geom
+  K_geom_pos
+  geom_factor_eval
+  geom_radii_bounds
+  neg_re_logDeriv_pole_bound
+  trig_341_inequality_combine
 )
 
 end Erdos1201.MR
