@@ -86,6 +86,7 @@ import Erdos1201.MR.Analysis.HalaszPrimes
 import Erdos1201.MR.Twisted.TwistedPsi
 import Erdos1201.MR.Vinogradov.ZetaBound
 import Erdos1201.MR.Vinogradov.ZeroFreeInstance
+import Erdos1201.MR.Twisted.TwistedPrimeSumsFinal
 
 /-!
 # Aggregator for the Matomäki–Radziwiłł formalization modules
