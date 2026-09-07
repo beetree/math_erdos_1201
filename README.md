@@ -239,8 +239,14 @@ bridges that follow the paper's exposition and are not on the terminal theorem's
 
 ## Vendored proofs
 
-`Erdos1201/Vendor/` holds 139 modules (about 58,500 lines) copied from the `solve-math` corpus
-with the same toolchain and Mathlib commit, with module paths renamed and no other changes:
+`Erdos1201/Vendor/` holds 139 modules (about 58,500 lines) copied from the `SolveMath/Corpus/`
+tree of the `solve-math` corpus with the same toolchain and Mathlib commit. The module paths are
+renamed (the prefix `SolveMath/Corpus/` becomes `Erdos1201/Vendor/`, and the `import` lines
+accordingly); apart from that, 136 files are identical to their sources and three carry a
+one-line compatibility edit each (`PNT/ZetaBounds.lean`: `Set.compl_eq_univ_diff` →
+`Set.compl_eq_univ_sdiff`; `PNT/MertensErrorTermAsymptotics.lean`: `Set.mem_setOf_eq` →
+`Set.mem_ofPred_eq`; `BoundedPrimeGaps/.../FiniteDuality.lean`: an added
+`variable {ι κ : Type*}` line). The modules are
 analytic-number-theory libraries (the prime number theorem with the smoothed Chebyshev contour,
 Mertens' theorems, the classical zero-free region, Halberstam–Richert and Selberg sieve bounds,
 friable integers, and supporting analysis). They are compiled as part of this library; no
